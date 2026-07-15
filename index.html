@@ -183,6 +183,49 @@
 
         function copyPass() {
             const pass = document.getElementById('pass-output').innerText;
+              function hexToRgb() {
+            let hex = document.getElementById('hex-input').value.replace('#', '');
+            if(hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+            if(hex.length === 6) {
+                let r = parseInt(hex.substring(0, 2), 16);
+                let g = parseInt(hex.substring(2, 4), 16);
+                let b = parseInt(hex.substring(4, 6), 16);
+                document.getElementById('r-input').value = r;
+                document.getElementById('g-input').value = g;
+                document.getElementById('b-input').value = b;
+                updateColorPreview(r, g, b);
+            }
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function rgbToHex() {
+            let r = parseInt(document.getElementById('r-input').value) || 0;
+            let g = parseInt(document.getElementById('g-input').value) || 0;
+            let b = parseInt(document.getElementById('b-input').value) || 0;
+            r = Math.min(255, Math.max(0, r));
+            g = Math.min(255, Math.max(0, g));
+            b = Math.min(255, Math.max(0, b));
+            let hex = r.toString(16).padStart(2, '0') + g.toString(16).padStart(2, '0') + b.toString(16).padStart(2, '0');
+            document.getElementById('hex-input').value = hex.toUpperCase();
+            updateColorPreview(r, g, b);
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function updateColorPreview(r, g, b) {
+            document.getElementById('color-preview').style.backgroundColor = `rgb(${r},${g},${b})`;
+            document.getElementById('color-preview').style.boxShadow = `0 4px 25px rgba(${r},${g},${b},0.6)`;
+        }
+
+        function copyColor() {
+            let r = document.getElementById('r-input').value;
+            let g = document.getElementById('g-input').value;
+            let b = document.getElementById('b-input').value;
+            let text = `rgb(${r}, ${g}, ${b})`;
+            navigator.clipboard.writeText(text);
+            tg.HapticFeedback.notificationOccurred('success');
+            const btn = document.querySelector('#color-tool .copy-btn');
+            const originalText = btn.innerText; btn.innerText = "✅ تم النسخ!"; setTimeout(() => btn.innerText = originalText, 1500);
+        }
             if(navigator.clipboard && pass !== "اضغط على توليد" && pass !== "يجب اختيار خيار واحد على الأقل!") {
                 navigator.clipboard.writeText(pass);
                 tg.HapticFeedback.notificationOccurred('success');
