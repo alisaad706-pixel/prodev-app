@@ -18,4 +18,148 @@
         .tool-container.active { display: block; }
         .buttons-row { display: flex; gap: 10px; }
         .buttons-row button { flex: 1; }
-        .pass-display { background-color: #2d2d2d; color: #4ec9b0
+        .pass-display { background-color: #2d2d2d; color: #4ec9b0; border: 1px solid #444; border-radius: 8px; padding: 15px; font-family: 'Courier New', Courier, monospace; font-size: 18px; text-align: center; direction: ltr; margin-bottom: 15px; word-break: break-all; user-select: all; }
+        .slider-container { margin-bottom: 15px; }
+        .slider-container label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; color: #aaa; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        .options-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; direction: ltr; }
+        .option-item { flex: 1 1 40%; display: flex; align-items: center; gap: 5px; font-size: 14px; }
+        .strength-bar { height: 5px; background-color: #333; border-radius: 5px; margin-top: 10px; overflow: hidden; }
+        .strength-fill { height: 100%; width: 0; transition: width 0.3s, background-color 0.3s; }
+        .copy-btn { background-color: #2d7d46; }
+    </style>
+</head>
+<body>
+    <h3>🛠️ ProDev Tools</h3>
+    <div class="tabs">
+        <div class="tab-btn active" onclick="switchTab('json', this)">🎨 JSON</div>
+        <div class="tab-btn" onclick="switchTab('base64', this)">🔐 Base64</div>
+        <div class="tab-btn" onclick="switchTab('pass', this)">🔑 Pass</div>
+    </div>
+
+    <div id="json-tool" class="tool-container active">
+        <textarea id="json-input" placeholder="الصق JSON هنا..."></textarea>
+        <button onclick="formatJSON()">تنسيق JSON ✨</button>
+        <textarea id="json-output" readonly placeholder="النتيجة ستظهر هنا..."></textarea>
+    </div>
+
+    <div id="base64-tool" class="tool-container">
+        <textarea id="b64-input" placeholder="الصق النص هنا..."></textarea>
+        <div class="buttons-row">
+            <button onclick="encodeB64()">🔒 تشفير</button>
+            <button onclick="decodeB64()">🔓 فك التشفير</button>
+        </div>
+        <textarea id="b64-output" readonly placeholder="النتيجة ستظهر هنا..."></textarea>
+    </div>
+
+    <div id="pass-tool" class="tool-container">
+        <div class="pass-display" id="pass-output">اضغط على توليد</div>
+        <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+        <div class="slider-container">
+            <label><span>الطول:</span> <span id="length-val">16</span></label>
+            <input type="range" id="pass-length" min="8" max="32" value="16" oninput="generatePass()">
+        </div>
+        <div class="options-container">
+            <div class="option-item"><input type="checkbox" id="opt-upper" checked onchange="generatePass()"> ABC</div>
+            <div class="option-item"><input type="checkbox" id="opt-lower" checked onchange="generatePass()"> abc</div>
+            <div class="option-item"><input type="checkbox" id="opt-nums" checked onchange="generatePass()"> 123</div>
+            <div class="option-item"><input type="checkbox" id="opt-syms" checked onchange="generatePass()"> !@#</div>
+        </div>
+        <button onclick="generatePass()">🔄 توليد كلمة مرور</button>
+        <button class="copy-btn" onclick="copyPass()">📋 نسخ كلمة المرور</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        function switchTab(tool, element) {
+            document.querySelectorAll('.tool-container').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`${tool}-tool`).classList.add('active');
+            element.classList.add('active');
+            tg.HapticFeedback.impactOccurred('light');
+            if(tool === 'pass') generatePass();
+        }
+
+        function formatJSON() {
+            const input = document.getElementById('json-input').value;
+            const output = document.getElementById('json-output');
+            try {
+                const parsed = JSON.parse(input);
+                output.value = JSON.stringify(parsed, null, 4);
+                output.style.color = "#4ec9b0";
+                tg.HapticFeedback.notificationOccurred('success');
+            } catch (e) {
+                output.value = "❌ خطأ في JSON:\n" + e.message;
+                output.style.color = "#f44747";
+                tg.HapticFeedback.notificationOccurred('error');
+            }
+        }
+
+        function encodeB64() {
+            const input = document.getElementById('b64-input').value;
+            const output = document.getElementById('b64-output');
+            try {
+                output.value = btoa(unescape(encodeURIComponent(input)));
+                output.style.color = "#4ec9b0";
+                tg.HapticFeedback.notificationOccurred('success');
+            } catch (e) {
+                output.value = "❌ خطأ في التشفير";
+                output.style.color = "#f44747";
+                tg.HapticFeedback.notificationOccurred('error');
+            }
+        }
+
+        function decodeB64() {
+            const input = document.getElementById('b64-input').value;
+            const output = document.getElementById('b64-output');
+            try {
+                output.value = decodeURIComponent(escape(atob(input)));
+                output.style.color = "#4ec9b0";
+                tg.HapticFeedback.notificationOccurred('success');
+            } catch (e) {
+                output.value = "❌ خطأ: النص ليس Base64 صالح!";
+                output.style.color = "#f44747";
+                tg.HapticFeedback.notificationOccurred('error');
+            }
+        }
+
+        function generatePass() {
+            const length = document.getElementById('pass-length').value;
+            document.getElementById('length-val').innerText = length;
+            let chars = '';
+            if (document.getElementById('opt-upper').checked) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            if (document.getElementById('opt-lower').checked) chars += 'abcdefghijklmnopqrstuvwxyz';
+            if (document.getElementById('opt-nums').checked) chars += '0123456789';
+            if (document.getElementById('opt-syms').checked) chars += '!@#$%^&*()_+~`|}{[]:;?><,./-=';
+            if (chars === '') { document.getElementById('pass-output').innerText = "يجب اختيار خيار واحد على الأقل!"; return; }
+            let pass = '';
+            for (let i = 0; i < length; i++) { pass += chars.charAt(Math.floor(Math.random() * chars.length)); }
+            document.getElementById('pass-output').innerText = pass;
+            let strength = 0;
+            if (length >= 12) strength += 25;
+            if (length >= 20) strength += 25;
+            if (document.getElementById('opt-upper').checked && document.getElementById('opt-lower').checked) strength += 25;
+            if (document.getElementById('opt-nums').checked && document.getElementById('opt-syms').checked) strength += 25;
+            const fill = document.getElementById('strength-fill');
+            fill.style.width = strength + '%';
+            if (strength <= 25) fill.style.backgroundColor = '#f44747';
+            else if (strength <= 50) fill.style.backgroundColor = '#dcdcaa';
+            else if (strength <= 75) fill.style.backgroundColor = '#1e90ff';
+            else fill.style.backgroundColor = '#4ec9b0';
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        function copyPass() {
+            const pass = document.getElementById('pass-output').innerText;
+            if(navigator.clipboard && pass !== "اضغط على توليد" && pass !== "يجب اختيار خيار واحد على الأقل!") {
+                navigator.clipboard.writeText(pass);
+                tg.HapticFeedback.notificationOccurred('success');
+                const btn = event.target; const originalText = btn.innerText; btn.innerText = "✅ تم النسخ!"; setTimeout(() => btn.innerText = originalText, 1500);
+            } else { tg.HapticFeedback.notificationOccurred('error'); }
+        }
+    </script>
+</body>
+</html>
