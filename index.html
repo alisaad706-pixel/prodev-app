@@ -41,9 +41,9 @@
     
     <!-- Tabs -->
     <div class="tabs">
-        <div class="tab-btn active" onclick="switchTab('json')">🎨 JSON</div>
-        <div class="tab-btn" onclick="switchTab('base64')">🔐 Base64</div>
-        <div class="tab-btn" onclick="switchTab('pass')">🔑 Pass</div>
+         <div class="tab-btn active" onclick="switchTab('json', this)">🎨 JSON</div>
+        <div class="tab-btn" onclick="switchTab('base64', this)">🔐 Base64</div>
+        <div class="tab-btn" onclick="switchTab('pass', this)">🔑 Pass</div>
     </div>
 
     <!-- JSON Tool -->
@@ -90,6 +90,9 @@
         tg.expand();
 
         // Tab Switching Logic
-        function switchTab(tool) {
+        function switchTab(tool, element) {
             document.querySelectorAll('.tool-container').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`${tool}-tool`).classList.add('active');
+            element.classList.add('active');
