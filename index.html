@@ -69,6 +69,34 @@
         <button onclick="generatePass()">🔄 توليد كلمة مرور</button>
         <button class="copy-btn" onclick="copyPass()">📋 نسخ كلمة المرور</button>
     </div>
+    <div id="color-tool" class="tool-container">
+        <div id="color-preview" style="width:100%; height: 100px; background-color: #1e88e5; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px; transition: 0.3s;"></div>
+        
+        <div style="direction:ltr; margin-bottom:20px;">
+            <label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">HEX Code:</label>
+            <div style="display:flex; align-items:center; background:#2d2d2d; border:1px solid #444; border-radius:8px; padding:10px; direction:ltr;">
+                <span style="color:#888; font-size:20px; margin-left:10px;">#</span>
+                <input type="text" id="hex-input" value="1E88E5" oninput="hexToRgb()" style="background:transparent; color:#4ec9b0; border:none; outline:none; font-size:20px; font-family:'Courier New'; width:100%; letter-spacing: 2px;">
+            </div>
+        </div>
+
+        <div style="display:flex; gap:15px; direction:ltr; margin-bottom:15px;">
+            <div style="flex:1; background:#2d2d2d; padding:10px; border-radius:8px; border:1px solid #444;">
+                <label style="color:#f44747; font-size:12px; display:block; margin-bottom:5px;">Red</label>
+                <input type="number" id="r-input" value="30" min="0" max="255" oninput="rgbToHex()" style="width:100%; background:transparent; color:#f44747; border:none; outline:none; font-size:20px; text-align:center;">
+            </div>
+            <div style="flex:1; background:#2d2d2d; padding:10px; border-radius:8px; border:1px solid #444;">
+                <label style="color:#4ec9b0; font-size:12px; display:block; margin-bottom:5px;">Green</label>
+                <input type="number" id="g-input" value="136" min="0" max="255" oninput="rgbToHex()" style="width:100%; background:transparent; color:#4ec9b0; border:none; outline:none; font-size:20px; text-align:center;">
+            </div>
+            <div style="flex:1; background:#2d2d2d; padding:10px; border-radius:8px; border:1px solid #444;">
+                <label style="color:#569cd6; font-size:12px; display:block; margin-bottom:5px;">Blue</label>
+                <input type="number" id="b-input" value="229" min="0" max="255" oninput="rgbToHex()" style="width:100%; background:transparent; color:#569cd6; border:none; outline:none; font-size:20px; text-align:center;">
+            </div>
+        </div>
+        
+        <button onclick="copyColor()" class="copy-btn">📋 نسخ كود RGB</button>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
