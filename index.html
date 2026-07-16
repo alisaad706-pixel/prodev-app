@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProDev Tools</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #d4d4d4; margin: 0; padding: 15px; }
+        
+        #main-menu { display: block; }
+        #tool-view { display: none; }
+        
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h2 { color: #569cd6; margin: 0; }
+        .header p { color: #888; font-size: 14px; margin: 5px 0 0 0; }
+        
+        .category-title { color: #dcdcaa; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 5px; margin: 20px 0 10px 0; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .tool-btn { background-color: #2d2d2d; border: 1px solid #444; border-radius: 12px; padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .tool-btn:active { background-color: #3d3d3d; transform: scale(0.95); }
+        .tool-btn span { display: block; font-size: 24px; margin-bottom: 5px; }
+        .tool-btn label { font-size: 12px; color: #d4d4d4; cursor: pointer; display: block; }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .back-btn { background: none; border: 1px solid #444; color: #d4d4d4; padding: 5px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .tool-title { color: #569cd6; font-size: 18px; font-weight: bold; }
+        
+        .tool-container { display: none; }
+        .tool-container.active { display: block; }
+        
+        textarea { width: 100%; height: 25vh; background-color: #2d2d2d; color: #4ec9b0; border: 1px solid #444; border-radius: 8px; padding: 10px; font-family: 'Courier New', Courier, monospace; font-size: 14px; resize: none; direction: ltr; text-align: left; }
+        button { width: 100%; padding: 12px; background-color: #0e639c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin: 10px 0; }
+        button:active { background-color: #1177bb; }
+        .buttons-row { display: flex; gap: 10px; } .buttons-row button { flex: 1; margin: 0; }
+        .copy-btn { background-color: #2d7d46; margin-top: 5px !important; }
+        
+        .pass-display { background-color: #2d2d2d; color: #4ec9b0; border: 1px solid #444; border-radius: 8px; padding: 15px; font-family: 'Courier New', Courier, monospace; font-size: 18px; text-align: center; direction: ltr; margin-bottom: 15px; word-break: break-all; user-select: all; }
+        .slider-container { margin-bottom: 15px; } .slider-container label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; color: #aaa; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        .options-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; direction: ltr; } .option-item { flex: 1 1 40%; display: flex; align-items: center; gap: 5px; font-size: 14px; }
+        .strength-bar { height: 5px; background-color: #333; border-radius: 5px; margin-top: 10px; overflow: hidden; } .strength-fill { height: 100%; width: 0; transition: width 0.3s, background-color 0.3s; }
+        select, input[type="number"], input[type="text"] { background-color: #2d2d2d; color: #d4d4d4; border: 1px solid #444; border-radius: 8px; padding: 10px; font-size: 16px; width: 100%; outline: none; direction: ltr; margin-bottom: 15px; }
+        .jwt-box { background: #2d2d2d; border: 1px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 15px; direction: ltr; font-family: 'Courier New'; font-size: 13px; white-space: pre-wrap; word-break: break-all; color: #4ec9b0; }
+        .jwt-label { color: #f44747; font-weight: bold; display: block; margin-bottom: 5px; font-size: 14px; direction: ltr;}
+        
+        /* QR Specific */
+        #qr-code { width: 180px; height: 180px; margin: 20px auto; background-color: white; padding: 10px; border-radius: 12px; display: flex; justify-content: center; align-items: center; }
+        #qr-code img { display: none; }
+        #qr-code canvas { display: none; }
+        
+        /* UUID Specific */
+        .uuid-box { background-color: #2d2d2d; border: 1px solid #444; border-radius: 8px; padding: 20px; text-align: center; direction: ltr; font-family: 'Courier New', monospace; font-size: 18px; color: #ce9178; letter-spacing: 2px; word-break: break-all; user-select: all; margin-bottom: 20px; }
+
+        /* New tools */
+        .cheatsheet-box { background-color: #2d2d2d; border: 1px solid #444; border-radius: 8px; padding: 15px; direction: ltr; text-align: left; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.9; color: #d4d4d4; white-space: pre-wrap; word-break: break-word; }
+        .cheatsheet-box code { color: #4ec9b0; background: #1e1e1e; padding: 1px 5px; border-radius: 4px; }
+        .cheatsheet-box b { color: #dcdcaa; }
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; direction: ltr; margin-bottom: 15px; }
+        .result-cell { background-color: #2d2d2d; border: 1px solid #444; border-radius: 8px; padding: 10px; }
+        .result-cell label { display: block; color: #888; font-size: 11px; margin-bottom: 4px; }
+        .result-cell span { color: #4ec9b0; font-family: 'Courier New', monospace; font-size: 15px; word-break: break-all; user-select: all; }
+        .field-row { display: flex; gap: 10px; margin-bottom: 15px; direction: ltr; }
+        .field-row select, .field-row input { margin-bottom: 0; }
+        .check-row { display: flex; gap: 15px; margin-bottom: 15px; direction: ltr; font-size: 14px; flex-wrap: wrap; }
+        .check-row label { display: flex; align-items: center; gap: 5px; color: #aaa; }
+        .small-note { color: #888; font-size: 12px; margin: -10px 0 15px 0; line-height: 1.6; }
+        .diff-line-add { color: #4ec9b0; }
+        .diff-line-remove { color: #f44747; }
+        .tab-row { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; min-width: 70px; background-color: #2d2d2d; border: 1px solid #444; color: #888; padding: 8px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 13px; }
+        .tab-btn.active { background-color: #0e639c; color: #fff; border-color: #0e639c; }
+
+        /* Learn to Code */
+        .learn-step { display: none; }
+        .learn-step.active { display: block; }
+        .track-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .track-btn { background-color: #2d2d2d; border: 1px solid #444; border-radius: 12px; padding: 18px 8px; text-align: center; cursor: pointer; }
+        .track-btn:active { background-color: #3d3d3d; transform: scale(0.97); }
+        .track-btn span { display: block; font-size: 28px; margin-bottom: 8px; }
+        .track-btn label { font-size: 13px; color: #d4d4d4; cursor: pointer; }
+        .level-grid { display: flex; flex-direction: column; gap: 10px; }
+        .level-btn { background-color: #2d2d2d; border: 1px solid #444; border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; font-size: 15px; color: #d4d4d4; }
+        .level-btn:active { background-color: #3d3d3d; }
+        .learn-content-box { background-color: #2d2d2d; border: 1px solid #444; border-radius: 8px; padding: 15px; font-size: 14px; line-height: 2; color: #d4d4d4; white-space: pre-wrap; }
+        .learn-content-box b { color: #dcdcaa; }
+        .learn-content-box code { color: #4ec9b0; background: #1e1e1e; padding: 1px 5px; border-radius: 4px; direction: ltr; display: inline-block; }
+        .learn-sub-back { background: none; border: 1px solid #444; color: #888; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; margin-bottom: 15px; }
+        .learn-title { color: #569cd6; font-size: 16px; font-weight: bold; margin-bottom: 15px; text-align: center; }
+
+        /* Visitor counter */
+        .visitor-counter { text-align: center; color: #666; font-size: 12px; margin-top: 25px; padding-top: 15px; border-top: 1px solid #2a2a2a; direction: ltr; }
+        .visitor-counter img { vertical-align: middle; opacity: 0.85; }
+    </style>
+</head>
+<body>
+
+    <div id="main-menu">
+        <div class="header">
+            <h2>🛠️ ProDev Tools</h2>
+            <p>مجموعة أدوات المطور الشامل</p>
+        </div>
+
+        <div class="category-title">📦 البيانات و التنسيق</div>
+        <div class="grid">
+            <div class="tool-btn" onclick="openTool('json')"><span>🎨</span><label>JSON</label></div>
+            <div class="tool-btn" onclick="openTool('yaml')"><span>🔄</span><label>YAML</label></div>
+            <div class="tool-btn" onclick="openTool('hash')"><span>#️⃣</span><label>Hash</label></div>
+            <div class="tool-btn" onclick="openTool('csv')"><span>📊</span><label>CSV↔JSON</label></div>
+            <div class="tool-btn" onclick="openTool('sql')"><span>🗄️</span><label>SQL</label></div>
+        </div>
+
+        <div class="category-title">🔐 التشفير و النصوص</div>
+        <div class="grid">
+            <div class="tool-btn" onclick="openTool('base64')"><span>🔐</span><label>Base64</label></div>
+            <div class="tool-btn" onclick="openTool('url')"><span>🔗</span><label>URL</label></div>
+        </div>
+
+        <div class="category-title">🌐 الشبكات و APIs</div>
+        <div class="grid">
+            <div class="tool-btn" onclick="openTool('jwt')"><span>🔓</span><label>JWT</label></div>
+            <div class="tool-btn" onclick="openTool('time')"><span>⏰</span><label>Time</label></div>
+            <div class="tool-btn" onclick="openTool('httpstatus')"><span>📶</span><label>HTTP Status</label></div>
+            <div class="tool-btn" onclick="openTool('useragent')"><span>🖥️</span><label>User-Agent</label></div>
+        </div>
+
+        <div class="category-title">👨‍💻 أدوات المطور</div>
+        <div class="grid">
+            <div class="tool-btn" onclick="openTool('uuid')"><span>🆔</span><label>UUID</label></div>
+            <div class="tool-btn" onclick="openTool('pass')"><span>🔑</span><label>Password</label></div>
+            <div class="tool-btn" onclick="openTool('color')"><span>🎨</span><label>Color</label></div>
+            <div class="tool-btn" onclick="openTool('qr')"><span>📱</span><label>QR Code</label></div>
+            <div class="tool-btn" onclick="openTool('regex')"><span>🔍</span><label>Regex</label></div>
+            <div class="tool-btn" onclick="openTool('counter')"><span>📏</span><label>Code Counter</label></div>
+            <div class="tool-btn" onclick="openTool('baseconv')"><span>🔢</span><label>Base Conv</label></div>
+            <div class="tool-btn" onclick="openTool('ascii')"><span>🔤</span><label>ASCII</label></div>
+            <div class="tool-btn" onclick="openTool('cron')"><span>⏱️</span><label>Cron</label></div>
+        </div>
+
+        <div class="category-title">🧰 أدوات النصوص</div>
+        <div class="grid">
+            <div class="tool-btn" onclick="openTool('mdhtml')"><span>📝</span><label>MD→HTML</label></div>
+            <div class="tool-btn" onclick="openTool('case')"><span>🔤</span><label>Case</label></div>
+            <div class="tool-btn" onclick="openTool('slug')"><span>🔗</span><label>Slug</label></div>
+            <div class="tool-btn" onclick="openTool('lorem')"><span>📄</span><label>Lorem</label></div>
+            <div class="tool-btn" onclick="openTool('diff')"><span>🆚</span><label>Diff</label></div>
+        </div>
+
+        <div class="category-title">📚 مرجع المطور</div>
+        <div class="grid">
+            <div class="tool-btn" onclick="openTool('gitref')"><span>📘</span><label>Git</label></div>
+            <div class="tool-btn" onclick="openTool('regexref')"><span>🔍</span><label>Regex Ref</label></div>
+            <div class="tool-btn" onclick="openTool('httpref')"><span>🌐</span><label>HTTP</label></div>
+            <div class="tool-btn" onclick="openTool('linuxref')"><span>🐧</span><label>Linux</label></div>
+        </div>
+
+        <div class="category-title">🎓 تعلم البرمجة</div>
+        <div class="grid">
+            <div class="tool-btn" onclick="openTool('learn')"><span>🎓</span><label>من الصفر للاحتراف</label></div>
+        </div>
+
+        <div class="visitor-counter">
+            <img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Falisaad706-pixel.github.io%2Fprodev-app%2F&label=%D8%B2%D9%88%D8%A7%D8%B1%20%D8%A7%D9%84%D9%85%D9%88%D9%82%D8%B9&icon=eye-fill&color=%234ec9b0" alt="visitors" height="20">
+        </div>
+    </div>
+
+    <div id="tool-view">
+        <div class="top-bar">
+            <button class="back-btn" onclick="goBack()">→ القائمة</button>
+            <div class="tool-title" id="current-tool-title">أداة</div>
+        </div>
+
+        <!-- JSON -->
+        <div id="json-tool" class="tool-container">
+            <textarea id="json-input" placeholder="الصق JSON هنا..."></textarea>
+            <div class="buttons-row"><button onclick="formatJSON()">تنسيق ✨</button><button onclick="minifyJSON()">ضغط 📦</button></div>
+            <textarea id="json-output" readonly placeholder="النتيجة..."></textarea>
+            <button onclick="copyText('json-output', this)" class="copy-btn">📋 نسخ</button>
+        </div>
+
+        <!-- YAML -->
+        <div id="yaml-tool" class="tool-container">
+            <textarea id="yaml-input" placeholder="الصق JSON أو YAML هنا..."></textarea>
+            <div class="buttons-row"><button onclick="jsonToYaml()">JSON → YAML</button><button onclick="yamlToJson()">YAML → JSON</button></div>
+            <textarea id="yaml-output" readonly placeholder="النتيجة..."></textarea>
+            <button onclick="copyText('yaml-output', this)" class="copy-btn">📋 نسخ</button>
+        </div>
+
+        <!-- Base64 -->
+        <div id="base64-tool" class="tool-container">
+            <textarea id="b64-input" placeholder="الصق النص هنا..."></textarea>
+            <div class="buttons-row"><button onclick="encodeB64()">🔒 تشفير</button><button onclick="decodeB64()">🔓 فك التشفير</button></div>
+            <textarea id="b64-output" readonly placeholder="النتيجة..."></textarea>
+            <button onclick="copyText('b64-output', this)" class="copy-btn">📋 نسخ</button>
+        </div>
+
+        <!-- URL -->
+        <div id="url-tool" class="tool-container">
+            <textarea id="url-input" placeholder="الصق الرابط أو النص هنا..."></textarea>
+            <div class="buttons-row"><button onclick="encodeUrl()">🔒 Encode</button><button onclick="decodeUrl()">🔓 Decode</button></div>
+            <textarea id="url-output" readonly placeholder="النتيجة..."></textarea>
+            <button onclick="copyText('url-output', this)" class="copy-btn">📋 نسخ</button>
+        </div>
+
+        <!-- JWT -->
+        <div id="jwt-tool" class="tool-container">
+            <textarea id="jwt-input" placeholder="الصق توكن JWT هنا..."></textarea>
+            <button onclick="decodeJWT()">🔓 فك تشفير التوكن</button>
+            <span class="jwt-label">Header:</span><div class="jwt-box" id="jwt-header">--</div>
+            <span class="jwt-label">Payload (البيانات):</span><div class="jwt-box" id="jwt-payload">--</div>
+            <button onclick="copyText('jwt-payload', this)" class="copy-btn">📋 نسخ البيانات</button>
+        </div>
+
+        <!-- Timestamp -->
+        <div id="time-tool" class="tool-container">
+            <div style="direction:ltr;"><label style="color:#569cd6; font-size:14px; display:block; margin-bottom:5px;">Unix Timestamp:</label><input type="number" id="unix-input" placeholder="مثال: 1704067200"></div>
+            <button onclick="unixToDate()">⏰ تحويل لتاريخ</button>
+            <div id="date-output" style="background:#2d2d2d; padding:10px; border-radius:8px; border:1px solid #444; margin-bottom:20px; direction:ltr; text-align:center; font-size:18px; color:#4ec9b0;">--</div>
+            <div style="direction:ltr;"><label style="color:#569cd6; font-size:14px; display:block; margin-bottom:5px;">التاريخ (YYYY-MM-DD HH:MM:SS):</label><input type="text" id="date-input" placeholder="مثال: 2024-01-01 12:00:00"></div>
+            <button onclick="dateToUnix()">🔢 تحويل لـ Unix</button>
+            <div id="unix-output" style="background:#2d2d2d; padding:10px; border-radius:8px; border:1px solid #444; direction:ltr; text-align:center; font-size:18px; color:#4ec9b0; user-select:all;">--</div>
+            <button onclick="copyText('unix-output', this)" class="copy-btn" style="margin-top:10px;">📋 نسخ</button>
+        </div>
+
+        <!-- UUID -->
+        <div id="uuid-tool" class="tool-container">
+            <div class="uuid-box" id="uuid-output">اضغط على توليد</div>
+            <button onclick="generateUUID()">🔄 توليد معرف UUID (v4)</button>
+            <button onclick="copyText('uuid-output', this)" class="copy-btn">📋 نسخ المعرف</button>
+        </div>
+
+        <!-- Password -->
+        <div id="pass-tool" class="tool-container">
+            <div class="pass-display" id="pass-output">اضغط على توليد</div>
+            <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+            <div class="slider-container"><label><span>الطول:</span> <span id="length-val">16</span></label><input type="range" id="pass-length" min="8" max="32" value="16" oninput="generatePass()"></div>
+            <div class="options-container">
+                <div class="option-item"><input type="checkbox" id="opt-upper" checked onchange="generatePass()"> ABC</div>
+                <div class="option-item"><input type="checkbox" id="opt-lower" checked onchange="generatePass()"> abc</div>
+                <div class="option-item"><input type="checkbox" id="opt-nums" checked onchange="generatePass()"> 123</div>
+                <div class="option-item"><input type="checkbox" id="opt-syms" checked onchange="generatePass()"> !@#</div>
+            </div>
+            <button onclick="generatePass()">🔄 توليد كلمة مرور</button>
+            <button onclick="copyText('pass-output', this)" class="copy-btn">📋 نسخ</button>
+        </div>
+
+        <!-- Color -->
+        <div id="color-tool" class="tool-container">
+            <div id="color-preview" style="width:100%; height: 100px; background-color: #1e88e5; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.5);"></div>
+            <div style="direction:ltr; margin-bottom:20px;"><label style="color:#aaa; font-size:14px; display:block; margin-bottom:5px;">HEX Code:</label><div style="display:flex; align-items:center; background:#2d2d2d; border:1px solid #444; border-radius:8px; padding:10px; direction:ltr;"><span style="color:#888; font-size:20px; margin-left:10px;">#</span><input type="text" id="hex-input" value="1E88E5" oninput="hexToRgb()" style="background:transparent; color:#4ec9b0; border:none; outline:none; font-size:20px; font-family:'Courier New'; width:100%; letter-spacing: 2px;"></div></div>
+            <div style="display:flex; gap:15px; direction:ltr; margin-bottom:15px;">
+                <div style="flex:1; background:#2d2d2d; padding:10px; border-radius:8px; border:1px solid #444;"><label style="color:#f44747; font-size:12px; display:block; margin-bottom:5px;">Red</label><input type="number" id="r-input" value="30" min="0" max="255" oninput="rgbToHex()" style="width:100%; background:transparent; color:#f44747; border:none; outline:none; font-size:20px; text-align:center;"></div>
+                <div style="flex:1; background:#2d2d2d; padding:10px; border-radius:8px; border:1px solid #444;"><label style="color:#4ec9b0; font-size:12px; display:block; margin-bottom:5px;">Green</label><input type="number" id="g-input" value="136" min="0" max="255" oninput="rgbToHex()" style="width:100%; background:transparent; color:#4ec9b0; border:none; outline:none; font-size:20px; text-align:center;"></div>
+                <div style="flex:1; background:#2d2d2d; padding:10px; border-radius:8px; border:1px solid #444;"><label style="color:#569cd6; font-size:12px; display:block; margin-bottom:5px;">Blue</label><input type="number" id="b-input" value="229" min="0" max="255" oninput="rgbToHex()" style="width:100%; background:transparent; color:#569cd6; border:none; outline:none; font-size:20px; text-align:center;"></div>
+            </div>
+            <button onclick="copyText('rgb-output-text', this)" class="copy-btn">📋 نسخ RGB</button>
+            <div id="rgb-output-text" style="display:none;">rgb(30, 136, 229)</div>
+        </div>
+
+        <!-- Hash -->
+        <div id="hash-tool" class="tool-container">
+            <textarea id="hash-input" placeholder="الصق النص المراد تشفيره هنا..."></textarea>
+            <select id="hash-type"><option value="MD5">MD5</option><option value="SHA-1">SHA-1</option><option value="SHA-256" selected>SHA-256</option><option value="SHA-512">SHA-512</option></select>
+            <button onclick="generateHash()">#️⃣ إنشاء Hash</button>
+            <textarea id="hash-output" readonly placeholder="النتيجة..."></textarea>
+            <button onclick="copyText('hash-output', this)" class="copy-btn">📋 نسخ</button>
+        </div>
+
+        <!-- QR Code -->
+        <div id="qr-tool" class="tool-container">
+            <input type="text" id="qr-input" placeholder="أدخل رابط أو نص لتحويله لـ QR Code...">
+            <button onclick="generateQR()">📱 إنشاء QR Code</button>
+            <div id="qr-code"></div>
+            <button onclick="downloadQR()" class="copy-btn">📥 تحميل كصورة</button>
+        </div>
+
+        <!-- CSV <-> JSON -->
+        <div id="csv-tool" class="tool-container">
+            <div class="small-note">CSV → JSON: الصق بيانات CSV (أول سطر رؤوس أعمدة). JSON → CSV: الصق مصفوفة كائنات JSON.</div>
+            <textarea id="csv-input" placeholder="الصق CSV أو JSON هنا..."></textarea>
+            <div class="buttons-row"><button onclick="csvToJson()">CSV → JSON</button><button onclick="jsonToCsv()">JSON → CSV</button></div>
+            <textarea id="csv-output" readonly placeholder="النتيجة..."></textarea>
+            <button onclick="copyText('csv-output', this)" class="copy-btn">📋 نسخ</button>
+        </div>
+
+        <!-- SQL Formatter -->
+        <div id="sql-tool" class="tool-container">
+            <textarea id="sql-input" placeholder="الصق استعلام SQL هنا..."></textarea>
+            <button onclick="formatSQL()">🗄️ تنسيق SQL</button>
+            <textarea id="sql-output" readonly placeholder="النتيجة..."></textarea>
+            <button onclick="copyText('sql-output', this)" class="copy-btn">📋 نسخ</button>
+        </div>
+
+        <!-- HTTP Status Lookup -->
+        <div id="httpstatus-tool" class="tool-container">
+            <input type="number" id="httpstatus-input" placeholder="مثال: 404" oninput="lookupHttpStatus()">
+            <div class="jwt-box" id="httpstatus-output" style="direction:rtl; text-align:right;">أدخل كود الحالة أعلاه</div>
+        </div>
+
+        <!-- User-Agent Parser -->
+        <div id="useragent-tool" class="tool-container">
+            <textarea id="useragent-input" placeholder="الصق User-Agent هنا..." style="height:15vh;"></textarea>
+            <button onclick="parseUserAgent()">🖥️ تحليل</button>
+            <div class="jwt-box" id="useragent-output" style="direction:rtl; text-align:right;">--</div>
+        </div>
+
+        <!-- Regex Tester -->
+        <div id="regex-tool" class="tool-container">
+            <div style="direction:ltr;"><input type="text" id="regex-pattern" placeholder="النمط، مثال: \d+" style="font-family:'Courier New'; direction:ltr;"></div>
+            <div class="check-row">
+                <label><input type="checkbox" id="regex-g" checked> g (كل التطابقات)</label>
+                <label><input type="checkbox" id="regex-i"> i (تجاهل حالة الأحرف)</label>
+                <label><input type="checkbox" id="regex-m"> m (متعدد الأسطر)</label>
+            </div>
+            <textarea id="regex-test-str" placeholder="النص المراد اختباره..."></textarea>
+            <button onclick="testRegex()">🔍 اختبار</button>
+            <div class="jwt-box" id="regex-output">--</div>
+        </div>
+
+        <!-- Code Counter -->
+        <div id="counter-tool" class="tool-container">
+            <textarea id="counter-input" placeholder="الصق الكود هنا..." oninput="countCode()"></textarea>
+            <div class="result-grid">
+                <div class="result-cell"><label>إجمالي الأسطر</label><span id="counter-total">0</span></div>
+                <div class="result-cell"><label>أسطر غير فارغة</label><span id="counter-nonempty">0</span></div>
+                <div class="result-cell"><label>أسطر تعليقات (تقريبي)</label><span id="counter-comments">0</span></div>
+                <div class="result-cell"><label>عدد الأحرف</label><span id="counter-chars">0</span></div>
+            </div>
+        </div>
+
+        <!-- Base Converter -->
+        <div id="baseconv-tool" class="tool-container">
+            <div class="field-row">
+                <input type="text" id="baseconv-input" placeholder="أدخل رقماً..." oninput="convertBase()" style="direction:ltr;">
+                <select id="baseconv-from" onchange="convertBase()" style="max-width:110px;">
+                    <option value="10">Decimal</option>
+                    <option value="2">Binary</option>
+                    <option value="8">Octal</option>
+                    <option value="16">Hex</option>
+                </select>
+            </div>
+            <div class="result-grid">
+                <div class="result-cell"><label>Decimal</label><span id="base-dec">--</span></div>
+                <div class="result-cell"><label>Binary</label><span id="base-bin">--</span></div>
+                <div class="result-cell"><label>Octal</label><span id="base-oct">--</span></div>
+                <div class="result-cell"><label>Hex</label><span id="base-hex">--</span></div>
+            </div>
+        </div>
+
+        <!-- ASCII Table -->
+        <div id="ascii-tool" class="tool-container">
+            <input type="text" id="ascii-input" placeholder="حرف واحد أو كود عشري..." oninput="lookupAscii()" style="direction:ltr;">
+            <div class="result-grid">
+                <div class="result-cell"><label>Character</label><span id="ascii-char">--</span></div>
+                <div class="result-cell"><label>Decimal</label><span id="ascii-dec">--</span></div>
+                <div class="result-cell"><label>Hex</label><span id="ascii-hex">--</span></div>
+                <div class="result-cell"><label>Binary</label><span id="ascii-bin">--</span></div>
+            </div>
+        </div>
+
+        <!-- Cron Explainer -->
+        <div id="cron-tool" class="tool-container">
+            <input type="text" id="cron-input" placeholder="مثال: */15 9-17 * * 1-5" oninput="explainCron()" style="direction:ltr; text-align:center; font-family:'Courier New';">
+            <div class="jwt-box" id="cron-output" style="direction:rtl; text-align:right;">أدخل تعبير Cron أعلاه (5 حقول)</div>
+        </div>
+
+        <!-- Markdown -> HTML -->
+        <div id="mdhtml-tool" class="tool-container">
+            <textarea id="mdhtml-input" placeholder="الصق Markdown هنا..."></textarea>
+            <button onclick="convertMdHtml()">📝 تحويل لـ HTML</button>
+            <textarea id="mdhtml-output" readonly placeholder="النتيجة..."></textarea>
+            <button onclick="copyText('mdhtml-output', this)" class="copy-btn">📋 نسخ</button>
+        </div>
+
+        <!-- Case Converter -->
+        <div id="case-tool" class="tool-container">
+            <textarea id="case-input" placeholder="أدخل النص هنا..." oninput="convertCase()" style="height:12vh;"></textarea>
+            <div class="jwt-box" id="case-output">--</div>
+            <button onclick="copyText('case-output', this)" class="copy-btn">📋 نسخ الكل</button>
+        </div>
+
+        <!-- Slug Generator -->
+        <div id="slug-tool" class="tool-container">
+            <textarea id="slug-input" placeholder="أدخل عنواناً..." oninput="generateSlug()" style="height:10vh;"></textarea>
+            <div class="pass-display" id="slug-output">--</div>
+            <button onclick="copyText('slug-output', this)" class="copy-btn">📋 نسخ</button>
+        </div>
+
+        <!-- Lorem Ipsum -->
+        <div id="lorem-tool" class="tool-container">
+            <div class="slider-container"><label><span>عدد الكلمات:</span> <span id="lorem-length-val">50</span></label><input type="range" id="lorem-length" min="10" max="300" value="50" oninput="generateLorem()"></div>
+            <button onclick="generateLorem()">📄 توليد</button>
+            <textarea id="lorem-output" readonly></textarea>
+            <button onclick="copyText('lorem-output', this)" class="copy-btn">📋 نسخ</button>
+        </div>
+
+        <!-- Diff Checker -->
+        <div id="diff-tool" class="tool-container">
+            <textarea id="diff-input1" placeholder="النص الأول..." style="height:15vh;"></textarea>
+            <textarea id="diff-input2" placeholder="النص الثاني..." style="height:15vh;"></textarea>
+            <button onclick="compareDiff()">🆚 قارن</button>
+            <div class="jwt-box" id="diff-output" style="max-height:35vh; overflow-y:auto;">--</div>
+        </div>
+
+        <!-- Reference Cheatsheets -->
+        <div id="gitref-tool" class="tool-container"><div class="cheatsheet-box" id="gitref-box"></div></div>
+        <div id="regexref-tool" class="tool-container"><div class="cheatsheet-box" id="regexref-box"></div></div>
+        <div id="httpref-tool" class="tool-container"><div class="cheatsheet-box" id="httpref-box"></div></div>
+        <div id="linuxref-tool" class="tool-container"><div class="cheatsheet-box" id="linuxref-box"></div></div>
+
+        <!-- Learn to Code -->
+        <div id="learn-tool" class="tool-container">
+            <div id="learn-step-tracks" class="learn-step active">
+                <div class="learn-title">🎓 اختر المسار</div>
+                <div class="track-grid" id="learn-tracks-grid"></div>
+            </div>
+            <div id="learn-step-levels" class="learn-step">
+                <button class="learn-sub-back" onclick="learnBackToTracks()">→ المسارات</button>
+                <div class="learn-title" id="learn-levels-title"></div>
+                <div class="level-grid" id="learn-levels-grid"></div>
+            </div>
+            <div id="learn-step-content" class="learn-step">
+                <button class="learn-sub-back" onclick="learnBackToLevels()">→ المستويات</button>
+                <div class="learn-content-box" id="learn-content-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+
+        const toolTitles = { json: "JSON Formatter", yaml: "YAML ↔ JSON", base64: "Base64", url: "URL Encode/Decode", jwt: "JWT Decoder", time: "Timestamp Converter", uuid: "UUID Generator", pass: "Password Generator", color: "Color Converter", hash: "Hash Generator", qr: "QR Code Generator", csv: "CSV ↔ JSON", sql: "SQL Formatter", httpstatus: "HTTP Status Lookup", useragent: "User-Agent Parser", regex: "Regex Tester", counter: "Code Counter", baseconv: "Base Converter", ascii: "ASCII Table", cron: "Cron Explainer", mdhtml: "Markdown → HTML", case: "Case Converter", slug: "Slug Generator", lorem: "Lorem Ipsum", diff: "Diff Checker", gitref: "Git Cheatsheet", regexref: "Regex Cheatsheet", httpref: "HTTP Methods", linuxref: "Linux Commands", learn: "تعلم البرمجة" };
+
+        function openTool(toolName) {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('tool-view').style.display = 'block';
+            document.getElementById('current-tool-title').innerText = toolTitles[toolName];
+            document.querySelectorAll('.tool-container').forEach(el => el.classList.remove('active'));
+            document.getElementById(`${toolName}-tool`).classList.add('active');
+            if(toolName === 'pass') generatePass();
+            if(toolName === 'qr' && document.getElementById('qr-input').value) generateQR();
+            if(toolName === 'lorem' && document.getElementById('lorem-output').value === '') generateLorem();
+            if(toolName === 'useragent' && document.getElementById('useragent-input').value === '') { document.getElementById('useragent-input').value = navigator.userAgent; parseUserAgent(); }
+            if(toolName === 'gitref') document.getElementById('gitref-box').innerHTML = GIT_CHEATSHEET;
+            if(toolName === 'regexref') document.getElementById('regexref-box').innerHTML = REGEX_CHEATSHEET;
+            if(toolName === 'httpref') document.getElementById('httpref-box').innerHTML = HTTP_CHEATSHEET;
+            if(toolName === 'linuxref') document.getElementById('linuxref-box').innerHTML = LINUX_CHEATSHEET;
+            if(toolName === 'learn') learnBackToTracks();
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function goBack() {
+            document.getElementById('main-menu').style.display = 'block';
+            document.getElementById('tool-view').style.display = 'none';
+            tg.HapticFeedback.impactOccurred('light'); window.scrollTo(0, 0);
+        }
+
+        function copyText(elementId, btnElement) {
+            const el = document.getElementById(elementId); let text = el.innerText || el.value;
+            if(text && text !== '--' && text !== "اضغط على توليد" && text !== "اضغط على توليد معرف UUID (v4)") {
+                navigator.clipboard.writeText(text); tg.HapticFeedback.notificationOccurred('success');
+                const originalText = btnElement.innerText; btnElement.innerText = "✅ تم النسخ!"; setTimeout(() => btnElement.innerText = originalText, 1500);
+            } else { tg.HapticFeedback.notificationOccurred('error'); }
+        }
+
+        // JSON
+        function formatJSON() { const i = document.getElementById('json-input').value, o = document.getElementById('json-output'); try { o.value = JSON.stringify(JSON.parse(i), null, 4); o.style.color = "#4ec9b0"; tg.HapticFeedback.notificationOccurred('success'); } catch(e) { o.value = "❌ خطأ:\n" + e.message; o.style.color = "#f44747"; }}
+        function minifyJSON() { const i = document.getElementById('json-input').value, o = document.getElementById('json-output'); try { o.value = JSON.stringify(JSON.parse(i)); o.style.color = "#4ec9b0"; tg.HapticFeedback.notificationOccurred('success'); } catch(e) { o.value = "❌ خطأ:\n" + e.message; o.style.color = "#f44747"; }}
+
+        // YAML
+        function jsonToYaml() { const i = document.getElementById('yaml-input').value, o = document.getElementById('yaml-output'); try { o.value = jsyaml.dump(JSON.parse(i), {indent: 2, lineWidth: -1}); o.style.color = "#4ec9b0"; tg.HapticFeedback.notificationOccurred('success'); } catch(e) { o.value = "❌ JSON غير صالح:\n" + e.message; o.style.color = "#f44747"; }}
+        function yamlToJson() { const i = document.getElementById('yaml-input').value, o = document.getElementById('yaml-output'); try { o.value = JSON.stringify(jsyaml.load(i), null, 4); o.style.color = "#4ec9b0"; tg.HapticFeedback.notificationOccurred('success'); } catch(e) { o.value = "❌ YAML غير صالح:\n" + e.message; o.style.color = "#f44747"; }}
+
+        // Base64
+        function encodeB64() { const o = document.getElementById('b64-output'); try { o.value = btoa(unescape(encodeURIComponent(document.getElementById('b64-input').value))); o.style.color = "#4ec9b0"; tg.HapticFeedback.notificationOccurred('success'); } catch(e) { o.value="❌ خطأ"; o.style.color="#f44747"; }}
+        function decodeB64() { const o = document.getElementById('b64-output'); try { o.value = decodeURIComponent(escape(atob(document.getElementById('b64-input').value))); o.style.color = "#4ec9b0"; tg.HapticFeedback.notificationOccurred('success'); } catch(e) { o.value="❌ خطأ"; o.style.color="#f44747"; }}
+
+        // URL
+        function encodeUrl() { const o = document.getElementById('url-output'); o.value = encodeURIComponent(document.getElementById('url-input').value); o.style.color = "#4ec9b0"; tg.HapticFeedback.notificationOccurred('success'); }
+        function decodeUrl() { const o = document.getElementById('url-output'); try { o.value = decodeURIComponent(document.getElementById('url-input').value); o.style.color = "#4ec9b0"; tg.HapticFeedback.notificationOccurred('success'); } catch(e) { o.value="❌ خطأ"; o.style.color="#f44747"; }}
+
+        // JWT
+        function decodeJWT() { const i = document.getElementById('jwt-input').value.trim(), hEl = document.getElementById('jwt-header'), pEl = document.getElementById('jwt-payload'); if(!i||!i.includes('.')){hEl.innerText="❌ صيغة غير صحيحة";pEl.innerText="";return;} try { const p=i.split('.'); hEl.innerText=JSON.stringify(JSON.parse(atob(p[0].replace(/-/g,'+').replace(/_/g,'/'))),null,2); let pl=JSON.parse(atob(p[1].replace(/-/g,'+').replace(/_/g,'/'))); if(pl.exp){const e=new Date(pl.exp*1000);pl.exp_string=`\n\n⏰ Exp: ${e.toLocaleString()}\nStatus: ${Date.now()>=e*1000?'❌ منتهي':'✅ ساري'}`;} pEl.innerText=JSON.stringify(pl,null,2)+(pl.exp_string||''); tg.HapticFeedback.notificationOccurred('success'); } catch(e) { hEl.innerText="❌ خطأ: "+e.message; pEl.innerText=""; }}
+
+        // Timestamp
+        function unixToDate(){const i=document.getElementById('unix-input').value,o=document.getElementById('date-output');if(!i){o.innerText="--";return;}const d=new Date(parseInt(i)*1000);if(isNaN(d.getTime())){o.innerText="❌ غير صالح";o.style.color="#f44747";return;}o.style.color="#4ec9b0";o.innerText=d.toISOString().replace('T',' ').split('.')[0];}
+        function dateToUnix(){const i=document.getElementById('date-input').value,o=document.getElementById('unix-output');if(!i){o.innerText="--";return;}const d=new Date(i);if(isNaN(d.getTime())){o.innerText="❌ تاريخ غير صالح";o.style.color="#f44747";return;}o.style.color="#4ec9b0";o.innerText=Math.floor(d.getTime()/1000);}
+
+        // UUID
+        function generateUUID() { document.getElementById('uuid-output').innerText = crypto.randomUUID(); tg.HapticFeedback.notificationOccurred('success'); }
+
+        // Password
+        function generatePass(){const l=document.getElementById('pass-length').value;document.getElementById('length-val').innerText=l;let c='';if(document.getElementById('opt-upper').checked)c+='ABCDEFGHIJKLMNOPQRSTUVWXYZ';if(document.getElementById('opt-lower').checked)c+='abcdefghijklmnopqrstuvwxyz';if(document.getElementById('opt-nums').checked)c+='0123456789';if(document.getElementById('opt-syms').checked)c+='!@#$%^&*()_+~`|}{[]:;?><,./-=';if(c===''){document.getElementById('pass-output').innerText="اختر خيار واحد";return;}let p='';for(let i=0;i<l;i++)p+=c.charAt(Math.floor(Math.random()*c.length));document.getElementById('pass-output').innerText=p;let s=0;if(l>=12)s+=25;if(l>=20)s+=25;if(document.getElementById('opt-upper').checked&&document.getElementById('opt-lower').checked)s+=25;if(document.getElementById('opt-nums').checked&&document.getElementById('opt-syms').checked)s+=25;const f=document.getElementById('strength-fill');f.style.width=s+'%';if(s<=25)f.style.backgroundColor='#f44747';else if(s<=50)f.style.backgroundColor='#dcdcaa';else if(s<=75)f.style.backgroundColor='#1e90ff';else f.style.backgroundColor='#4ec9b0';tg.HapticFeedback.notificationOccurred('success');}
+
+        // Color
+        function hexToRgb(){let h=document.getElementById('hex-input').value.replace('#','');if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];if(h.length===6){let r=parseInt(h.substring(0,2),16),g=parseInt(h.substring(2,4),16),b=parseInt(h.substring(4,6),16);document.getElementById('r-input').value=r;document.getElementById('g-input').value=g;document.getElementById('b-input').value=b;updateColor(r,g,b);}tg.HapticFeedback.impactOccurred('light');}
+        function rgbToHex(){let r=parseInt(document.getElementById('r-input').value)||0,g=parseInt(document.getElementById('g-input').value)||0,b=parseInt(document.getElementById('b-input').value)||0;r=Math.min(255,Math.max(0,r));g=Math.min(255,Math.max(0,g));b=Math.min(255,Math.max(0,b));document.getElementById('hex-input').value=r.toString(16).padStart(2,'0')+g.toString(16).padStart(2,'0')+b.toString(16).padStart(2,'0').toUpperCase();updateColor(r,g,b);tg.HapticFeedback.impactOccurred('light');}
+        function updateColor(r,g,b){document.getElementById('color-preview').style.backgroundColor=`rgb(${r},${g},${b})`;document.getElementById('color-preview').style.boxShadow=`0 4px 25px rgba(${r},${g},${b},0.6)`;document.getElementById('rgb-output-text').innerText=`rgb(${r}, ${g}, ${b})`;}
+
+        // Hash
+        function generateHash(){const i=document.getElementById('hash-input').value,t=document.getElementById('hash-type').value,o=document.getElementById('hash-output');if(!i){o.value="❌ أدخل نصاً";o.style.color="#f44747";return;}try{let h="";if(t==="MD5")h=CryptoJS.MD5(i).toString();else if(t==="SHA-1")h=CryptoJS.SHA1(i).toString();else if(t==="SHA-256")h=CryptoJS.SHA256(i).toString();else if(t==="SHA-512")h=CryptoJS.SHA512(i).toString();o.value=h;o.style.color="#4ec9b0";tg.HapticFeedback.notificationOccurred('success');}catch(e){o.value="❌ خطأ";o.style.color="#f44747";}}
+
+        // QR Code
+        let qrInstance = null;
+        function generateQR() {
+            const text = document.getElementById('qr-input').value.trim();
+            if (!text) return;
+            const qrContainer = document.getElementById('qr-code');
+            qrContainer.innerHTML = '';
+            qrInstance = new QRCode(qrContainer, { text: text, width: 160, height: 160, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+        function downloadQR() {
+            if (!qrInstance) return;
+            const canvas = document.querySelector('#qr-code canvas');
+            if (!canvas) { tg.HapticFeedback.notificationOccurred('error'); return; }
+            const link = document.createElement("a");
+            link.download = "qrcode_prodev.png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        // CSV <-> JSON
+        function parseCSV(text) {
+            const lines = text.trim().split(/\r?\n/);
+            const headers = lines[0].split(',').map(h => h.trim());
+            return lines.slice(1).filter(l => l.trim() !== '').map(line => {
+                const cells = line.split(',');
+                const obj = {};
+                headers.forEach((h, idx) => obj[h] = (cells[idx] || '').trim());
+                return obj;
+            });
+        }
+        function toCSV(arr) {
+            if (!Array.isArray(arr) || arr.length === 0) throw new Error('يجب أن تكون البيانات مصفوفة غير فارغة');
+            const headers = Object.keys(arr[0]);
+            const rows = arr.map(obj => headers.map(h => obj[h]).join(','));
+            return headers.join(',') + '\n' + rows.join('\n');
+        }
+        function csvToJson() {
+            const i = document.getElementById('csv-input').value, o = document.getElementById('csv-output');
+            try { o.value = JSON.stringify(parseCSV(i), null, 2); o.style.color = "#4ec9b0"; tg.HapticFeedback.notificationOccurred('success'); }
+            catch(e) { o.value = "❌ خطأ: " + e.message; o.style.color = "#f44747"; }
+        }
+        function jsonToCsv() {
+            const i = document.getElementById('csv-input').value, o = document.getElementById('csv-output');
+            try { o.value = toCSV(JSON.parse(i)); o.style.color = "#4ec9b0"; tg.HapticFeedback.notificationOccurred('success'); }
+            catch(e) { o.value = "❌ خطأ: " + e.message; o.style.color = "#f44747"; }
+        }
+
+        // SQL Formatter (lightweight, dependency-free)
+        function formatSQL() {
+            const i = document.getElementById('sql-input').value, o = document.getElementById('sql-output');
+            const keywords = ['SELECT','FROM','WHERE','LEFT JOIN','RIGHT JOIN','INNER JOIN','JOIN','GROUP BY','ORDER BY','HAVING','LIMIT','INSERT INTO','VALUES','UPDATE','SET','DELETE FROM','AND','OR'];
+            let formatted = i;
+            keywords.forEach(kw => { formatted = formatted.replace(new RegExp('\\b' + kw.replace(/ /g,'\\s+') + '\\b', 'gi'), '\n' + kw.toUpperCase()); });
+            o.value = formatted.trim(); o.style.color = "#4ec9b0"; tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        // HTTP Status Lookup
+        const HTTP_STATUSES = { 100:"Continue",101:"Switching Protocols",200:"OK",201:"Created",202:"Accepted",204:"No Content",301:"Moved Permanently",302:"Found",304:"Not Modified",307:"Temporary Redirect",308:"Permanent Redirect",400:"Bad Request",401:"Unauthorized",403:"Forbidden",404:"Not Found",405:"Method Not Allowed",408:"Request Timeout",409:"Conflict",410:"Gone",422:"Unprocessable Entity",429:"Too Many Requests",500:"Internal Server Error",501:"Not Implemented",502:"Bad Gateway",503:"Service Unavailable",504:"Gateway Timeout" };
+        function lookupHttpStatus() {
+            const code = parseInt(document.getElementById('httpstatus-input').value);
+            const o = document.getElementById('httpstatus-output');
+            if (!code) { o.innerText = "أدخل كود الحالة أعلاه"; return; }
+            const phrase = HTTP_STATUSES[code];
+            if (!phrase) { o.innerText = "❌ كود غير معروف"; return; }
+            const cat = Math.floor(code/100);
+            const catNames = {1:"ℹ️ إعلامي",2:"✅ نجاح",3:"↪️ إعادة توجيه",4:"⚠️ خطأ من العميل",5:"🔴 خطأ من السيرفر"};
+            o.innerText = `HTTP ${code}\nالمعنى: ${phrase}\nالفئة: ${catNames[cat] || '--'}`;
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
+        // User-Agent Parser
+        function parseUserAgent() {
+            const ua = document.getElementById('useragent-input').value;
+            const o = document.getElementById('useragent-output');
+            let browser = "غير معروف";
+            if (ua.includes("Edg/")) browser = "Microsoft Edge";
+            else if (ua.includes("OPR/") || ua.includes("Opera")) browser = "Opera";
+            else if (ua.includes("Firefox/")) browser = "Firefox";
+            else if (ua.includes("Chrome/") && ua.includes("Safari/")) browser = "Chrome";
+            else if (ua.includes("Safari/") && ua.includes("Version/")) browser = "Safari";
+            let os = "غير معروف";
+            if (ua.includes("Windows NT")) os = "Windows";
+            else if (ua.includes("Mac OS X")) os = "macOS";
+            else if (ua.includes("Android")) os = "Android";
+            else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
+            else if (ua.includes("Linux")) os = "Linux";
+            const isMobile = /Mobile|Android|iPhone/.test(ua);
+            o.innerText = `المتصفح: ${browser}\nنظام التشغيل: ${os}\nنوع الجهاز: ${isMobile ? '📱 موبايل' : '🖥️ كمبيوتر'}`;
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        // Regex Tester
+        function testRegex() {
+            const pattern = document.getElementById('regex-pattern').value;
+            const str = document.getElementById('regex-test-str').value;
+            const o = document.getElementById('regex-output');
+            let flags = '';
+            if (document.getElementById('regex-g').checked) flags += 'g';
+            if (document.getElementById('regex-i').checked) flags += 'i';
+            if (document.getElementById('regex-m').checked) flags += 'm';
+            try {
+                const re = new RegExp(pattern, flags);
+                const matches = [...str.matchAll(flags.includes('g') ? re : new RegExp(pattern, flags + 'g'))];
+                if (matches.length === 0) { o.innerText = "لا يوجد أي تطابق"; tg.HapticFeedback.notificationOccurred('error'); return; }
+                o.innerText = `عدد التطابقات: ${matches.length}\n\n` + matches.slice(0, 30).map((m, idx) => `${idx+1}. "${m[0]}" (index ${m.index})`).join('\n');
+                tg.HapticFeedback.notificationOccurred('success');
+            } catch(e) { o.innerText = "❌ نمط Regex غير صالح: " + e.message; tg.HapticFeedback.notificationOccurred('error'); }
+        }
+
+        // Code Counter
+        function countCode() {
+            const text = document.getElementById('counter-input').value;
+            const lines = text.split('\n');
+            const nonEmpty = lines.filter(l => l.trim() !== '').length;
+            const comments = lines.filter(l => { const t = l.trim(); return t.startsWith('//') || t.startsWith('#') || t.startsWith('/*') || t.startsWith('*'); }).length;
+            document.getElementById('counter-total').innerText = lines.length;
+            document.getElementById('counter-nonempty').innerText = nonEmpty;
+            document.getElementById('counter-comments').innerText = comments;
+            document.getElementById('counter-chars').innerText = text.length;
+        }
+
+        // Base Converter
+        function convertBase() {
+            const val = document.getElementById('baseconv-input').value.trim();
+            const fromBase = parseInt(document.getElementById('baseconv-from').value);
+            const cells = { dec: document.getElementById('base-dec'), bin: document.getElementById('base-bin'), oct: document.getElementById('base-oct'), hex: document.getElementById('base-hex') };
+            if (!val) { Object.values(cells).forEach(c => c.innerText = '--'); return; }
+            const num = parseInt(val, fromBase);
+            if (isNaN(num)) { Object.values(cells).forEach(c => c.innerText = '❌'); return; }
+            cells.dec.innerText = num.toString(10);
+            cells.bin.innerText = num.toString(2);
+            cells.oct.innerText = num.toString(8);
+            cells.hex.innerText = num.toString(16).toUpperCase();
+        }
+
+        // ASCII Table Lookup
+        function lookupAscii() {
+            const val = document.getElementById('ascii-input').value.trim();
+            const cells = { ch: document.getElementById('ascii-char'), dec: document.getElementById('ascii-dec'), hex: document.getElementById('ascii-hex'), bin: document.getElementById('ascii-bin') };
+            if (!val) { Object.values(cells).forEach(c => c.innerText = '--'); return; }
+            let code, ch;
+            if (/^\d+$/.test(val)) { code = parseInt(val); ch = String.fromCharCode(code); }
+            else { ch = val[0]; code = ch.charCodeAt(0); }
+            cells.ch.innerText = ch; cells.dec.innerText = code; cells.hex.innerText = '0x' + code.toString(16).toUpperCase(); cells.bin.innerText = code.toString(2);
+        }
+
+        // Cron Explainer
+        function explainField(v) {
+            if (v === '*') return 'كل قيمة';
+            if (v.startsWith('*/')) return `كل ${v.slice(2)}`;
+            if (v.includes('-') && !v.includes(',')) { const [a,b] = v.split('-'); return `من ${a} إلى ${b}`; }
+            if (v.includes(',')) return `القيم: ${v}`;
+            return v;
+        }
+        function explainCron() {
+            const val = document.getElementById('cron-input').value.trim();
+            const o = document.getElementById('cron-output');
+            const fields = val.split(/\s+/).filter(Boolean);
+            if (fields.length !== 5) { o.innerText = "أدخل تعبير Cron أعلاه (5 حقول)"; return; }
+            const [min, hour, day, month, weekday] = fields;
+            o.innerText = `الدقيقة: ${explainField(min)}\nالساعة: ${explainField(hour)}\nيوم الشهر: ${explainField(day)}\nالشهر: ${explainField(month)}\nيوم الأسبوع: ${explainField(weekday)} (0=الأحد)`;
+        }
+
+        // Markdown -> HTML (dependency-free mini converter)
+        function mdToHtml(md) {
+            const lines = md.split('\n'); const out = []; let inCode = false;
+            for (let line of lines) {
+                if (line.trim().startsWith('```')) { inCode = !inCode; out.push(inCode ? '<pre><code>' : '</code></pre>'); continue; }
+                if (inCode) { out.push(line); continue; }
+                const h = line.match(/^(#{1,6})\s+(.*)$/);
+                if (h) { out.push(`<h${h[1].length}>${h[2]}</h${h[1].length}>`); continue; }
+                let p = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/`(.+?)`/g, '<code>$1</code>').replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
+                if (/^\s*[-*]\s+/.test(p)) out.push(`<li>${p.replace(/^\s*[-*]\s+/, '')}</li>`);
+                else if (p.trim() === '') out.push('');
+                else out.push(`<p>${p}</p>`);
+            }
+            return out.join('\n');
+        }
+        function convertMdHtml() {
+            const i = document.getElementById('mdhtml-input').value, o = document.getElementById('mdhtml-output');
+            o.value = mdToHtml(i); o.style.color = "#4ec9b0"; tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        // Case Converter
+        function convertCase() {
+            const text = document.getElementById('case-input').value.trim();
+            const o = document.getElementById('case-output');
+            if (!text) { o.innerText = '--'; return; }
+            const words = text.split(/[\s_-]+/).filter(Boolean);
+            const upper = text.toUpperCase(), lower = text.toLowerCase();
+            const title = words.map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+            const camel = words.length ? words[0].toLowerCase() + words.slice(1).map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join('') : '';
+            const pascal = words.map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join('');
+            const snake = words.map(w => w.toLowerCase()).join('_');
+            const kebab = words.map(w => w.toLowerCase()).join('-');
+            o.innerText = `UPPERCASE:\n${upper}\n\nlowercase:\n${lower}\n\nTitle Case:\n${title}\n\ncamelCase:\n${camel}\n\nPascalCase:\n${pascal}\n\nsnake_case:\n${snake}\n\nkebab-case:\n${kebab}`;
+        }
+
+        // Slug Generator
+        function generateSlug() {
+            const text = document.getElementById('slug-input').value.trim();
+            const o = document.getElementById('slug-output');
+            if (!text) { o.innerText = '--'; return; }
+            let slug = text.toLowerCase().replace(/[^\w\s\u0600-\u06FF-]/g, '').replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+            o.innerText = slug;
+        }
+
+        // Lorem Ipsum
+        const LOREM_WORDS = "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum".split(' ');
+        function generateLorem() {
+            const count = parseInt(document.getElementById('lorem-length').value);
+            document.getElementById('lorem-length-val').innerText = count;
+            let words = [];
+            while (words.length < count) words = words.concat(LOREM_WORDS);
+            words = words.slice(0, count);
+            const text = words.join(' ');
+            document.getElementById('lorem-output').value = text.charAt(0).toUpperCase() + text.slice(1) + '.';
+        }
+
+        // Diff Checker (simple LCS-based line diff)
+        function computeDiff(a, b) {
+            const linesA = a.split('\n'), linesB = b.split('\n');
+            const n = linesA.length, m = linesB.length;
+            const dp = Array.from({length: n+1}, () => new Array(m+1).fill(0));
+            for (let i = n-1; i >= 0; i--) for (let j = m-1; j >= 0; j--) dp[i][j] = linesA[i] === linesB[j] ? dp[i+1][j+1] + 1 : Math.max(dp[i+1][j], dp[i][j+1]);
+            const result = []; let i = 0, j = 0;
+            while (i < n && j < m) {
+                if (linesA[i] === linesB[j]) { result.push('  ' + linesA[i]); i++; j++; }
+                else if (dp[i+1][j] >= dp[i][j+1]) { result.push('- ' + linesA[i]); i++; }
+                else { result.push('+ ' + linesB[j]); j++; }
+            }
+            while (i < n) { result.push('- ' + linesA[i]); i++; }
+            while (j < m) { result.push('+ ' + linesB[j]); j++; }
+            return result;
+        }
+        function compareDiff() {
+            const a = document.getElementById('diff-input1').value, b = document.getElementById('diff-input2').value;
+            const o = document.getElementById('diff-output');
+            const diff = computeDiff(a, b);
+            if (diff.every(l => l.startsWith('  '))) { o.innerHTML = '✅ لا يوجد أي فرق بين النصين'; return; }
+            o.innerHTML = diff.map(l => {
+                if (l.startsWith('+ ')) return `<span class="diff-line-add">${l}</span>`;
+                if (l.startsWith('- ')) return `<span class="diff-line-remove">${l}</span>`;
+                return l;
+            }).join('\n');
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        // Static reference cheatsheets
+        const GIT_CHEATSHEET = `<b>git init</b> — إنشاء مستودع جديد\n<b>git clone &lt;url&gt;</b> — نسخ مستودع\n<b>git status</b> — عرض حالة الملفات\n<b>git add .</b> — إضافة كل التعديلات\n<b>git commit -m "msg"</b> — حفظ التعديلات\n<b>git push</b> — رفع التعديلات\n<b>git pull</b> — سحب آخر تحديثات\n<b>git branch &lt;name&gt;</b> — إنشاء فرع جديد\n<b>git checkout &lt;branch&gt;</b> — التبديل لفرع\n<b>git checkout -b &lt;branch&gt;</b> — إنشاء فرع والتبديل له\n<b>git merge &lt;branch&gt;</b> — دمج فرع\n<b>git log --oneline</b> — عرض تاريخ الـ commits\n<b>git diff</b> — عرض الفروقات\n<b>git stash</b> — تخزين التعديلات مؤقتاً\n<b>git reset --hard HEAD</b> — التراجع عن كل التعديلات`;
+        const REGEX_CHEATSHEET = `<b>.</b> — أي حرف واحد\n<b>\\d</b> — رقم (0-9)\n<b>\\w</b> — حرف/رقم/underscore\n<b>\\s</b> — مسافة بيضاء\n<b>*</b> — 0 أو أكثر\n<b>+</b> — 1 أو أكثر\n<b>?</b> — 0 أو 1\n<b>{n,m}</b> — من n إلى m مرة\n<b>^</b> — بداية النص\n<b>$</b> — نهاية النص\n<b>[abc]</b> — أي حرف من المجموعة\n<b>[^abc]</b> — أي حرف ليس من المجموعة\n<b>(a|b)</b> — a أو b\n<b>\\b</b> — حدود الكلمة`;
+        const HTTP_CHEATSHEET = `<b>GET</b> — جلب بيانات (بدون تعديل)\n<b>POST</b> — إنشاء مورد جديد\n<b>PUT</b> — تحديث/استبدال مورد كامل\n<b>PATCH</b> — تحديث جزئي لمورد\n<b>DELETE</b> — حذف مورد\n<b>HEAD</b> — مثل GET بدون Body\n<b>OPTIONS</b> — معرفة الطرق المتاحة`;
+        const LINUX_CHEATSHEET = `<b>ls -la</b> — عرض الملفات بالتفصيل\n<b>cd &lt;dir&gt;</b> — تغيير المجلد\n<b>pwd</b> — عرض المسار الحالي\n<b>mkdir &lt;dir&gt;</b> — إنشاء مجلد\n<b>rm -rf &lt;dir&gt;</b> — حذف مجلد بالكامل ⚠️\n<b>cp &lt;src&gt; &lt;dst&gt;</b> — نسخ ملف\n<b>mv &lt;src&gt; &lt;dst&gt;</b> — نقل/إعادة تسمية\n<b>chmod +x &lt;file&gt;</b> — جعل الملف قابل للتنفيذ\n<b>grep -r "text" .</b> — بحث نصي في الملفات\n<b>ps aux</b> — عرض العمليات الجارية\n<b>kill -9 &lt;pid&gt;</b> — إيقاف عملية بالقوة\n<b>top</b> / <b>htop</b> — مراقبة الموارد\n<b>df -h</b> — مساحة القرص المتاحة\n<b>tail -f &lt;file&gt;</b> — متابعة ملف log مباشرة`;
+
+const LEARN_CONTENT = {
+  "python": {
+    "beginner": "1️⃣ <b>التثبيت والإعداد:</b> نزّل بايثون من python.org وثبّت VS Code كمحرر أكواد. شغّل <code>python --version</code> في الـ terminal للتأكد إنه اتثبت صح.\n\n2️⃣ <b>المتغيرات وأنواع البيانات:</b> المتغير هو اسم بيخزن قيمة، زي <code>age = 25</code>. الأنواع الأساسية: <code>int</code> (أرقام صحيحة)، <code>float</code> (أرقام عشرية)، <code>str</code> (نصوص)، <code>bool</code> (True/False).\n\n3️⃣ <b>العمليات والمقارنات:</b> <code>+ - * /</code> للحساب، و<code>== != &gt; &lt;</code> للمقارنة.\n\n4️⃣ <b>الشروط:</b> <code>if condition:</code> تنفّذ كود لو الشرط صح، و<code>elif</code> لشروط إضافية، و<code>else</code> للحالة الافتراضية.\n\n5️⃣ <b>الحلقات:</b> <code>for item in list:</code> بتكرر على عناصر قائمة، و<code>while condition:</code> بتكرر طالما الشرط صح.\n\n6️⃣ <b>القوائم والقواميس:</b> <code>list = [1,2,3]</code> تخزن عناصر مرتبة، و<code>dict = {'key':'value'}</code> تخزن أزواج مفتاح-قيمة.\n\n7️⃣ <b>الدوال:</b> <code>def greet(name):</code> بتعرّف دالة تقدر تستدعيها بدل تكرار الكود، واستخدم <code>return</code> لإرجاع قيمة.\n\n8️⃣ <b>معالجة الأخطاء:</b> <code>try/except</code> بتمنع البرنامج من التوقف المفاجئ لو حصل خطأ.\n\n9️⃣ <b>الملفات:</b> <code>open('file.txt', 'r')</code> لقراءة ملف، و<code>'w'</code> للكتابة. استخدم <code>with open(...) as f:</code> عشان الملف يتقفل تلقائياً.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل آلة حاسبة بسيطة أو لعبة تخمين رقم عشوائي.\n\n📚 <b>مصادر مجانية:</b> python.org/doc، W3Schools Python، freeCodeCamp Python Course",
+    "intermediate": "1️⃣ <b>البرمجة كائنية التوجه:</b> <code>class Car:</code> بتعرّف نوع بيانات مخصص، والـ Inheritance بيخلي كلاس يورث سلوك كلاس تاني.\n\n2️⃣ <b>Comprehensions:</b> <code>[x*2 for x in range(10)]</code> طريقة مختصرة لإنشاء قائمة من حلقة في سطر واحد.\n\n3️⃣ <b>الوحدات والحزم:</b> <code>import math</code> بتستورد كود جاهز. استخدم <code>pip install &lt;package&gt;</code> لتثبيت مكتبات خارجية.\n\n4️⃣ <b>البيئات الافتراضية:</b> <code>python -m venv venv</code> بتعزل مكتبات مشروعك عن باقي النظام.\n\n5️⃣ <b>JSON وAPIs:</b> مكتبة <code>requests</code> بتخليك تتواصل مع أي API خارجي.\n\n6️⃣ <b>Decorators وGenerators:</b> الـ Decorator بيضيف سلوك لدالة من غير تعديل كودها، والـ Generator بيرجع قيم واحدة واحدة.\n\n7️⃣ <b>اختبار الكود:</b> <code>pytest</code> بتخليك تكتب اختبارات تتأكد إن كودك شغال صح تلقائياً.\n\n8️⃣ <b>قواعد البيانات:</b> <code>sqlite3</code> مدمجة في بايثون، و<code>SQLAlchemy</code> بتدّيك ORM.\n\n9️⃣ <b>Git:</b> <code>git add</code>, <code>git commit</code>, <code>git push</code> أساسيات حفظ ومشاركة كودك.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل Telegram Bot، أو REST API بسيط بـ Flask.\n\n📚 <b>مصادر مجانية:</b> Real Python، Corey Schafer على يوتيوب، docs.python-telegram-bot.org",
+    "advanced": "1️⃣ <b>البرمجة غير المتزامنة:</b> <code>async def</code> و<code>await</code> بتخليك تشغّل عمليات متعددة من غير ما توقف البرنامج كله.\n\n2️⃣ <b>Design Patterns:</b> حلول جاهزة لمشاكل تصميم متكررة، زي Singleton وFactory.\n\n3️⃣ <b>تحسين الأداء:</b> استخدم <code>cProfile</code> لمعرفة أبطأ جزء في كودك. <code>multiprocessing</code> و<code>threading</code> لتوازي العمليات.\n\n4️⃣ <b>بناء وتوزيع الحزم:</b> <code>pyproject.toml</code> وأدوات زي <code>poetry</code> لنشر مكتبتك على PyPI.\n\n5️⃣ <b>أطر عمل متقدمة:</b> Django لمواقع كبيرة، وFastAPI أخف وأسرع لبناء APIs حديثة.\n\n6️⃣ <b>CI/CD وDocker:</b> Docker بيحزم تطبيقك في container شغال بنفس الطريقة في أي مكان.\n\n7️⃣ <b>قواعد بيانات إنتاجية:</b> PostgreSQL وRedis كـ cache سريع.\n\n8️⃣ <b>كود نظيف:</b> مبادئ SOLID بتساعدك تكتب كود سهل الصيانة.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل نظام Microservices بسيط، أو تطبيق FastAPI كامل مع JWT authentication.\n\n📚 <b>مصادر مجانية:</b> FastAPI docs، Django docs، ArjanCodes على يوتيوب"
+  },
+  "javascript": {
+    "beginner": "1️⃣ <b>المتغيرات:</b> استخدم <code>let</code> للمتغيرات المتغيرة، و<code>const</code> للقيم الثابتة، وتجنب <code>var</code> القديمة.\n\n2️⃣ <b>الشروط:</b> <code>if/else</code> و<code>switch</code> لحالات كتير لنفس المتغير.\n\n3️⃣ <b>الحلقات:</b> <code>for</code> للتكرار المحدد، و<code>forEach</code> للتكرار على عناصر مصفوفة.\n\n4️⃣ <b>المصفوفات والكائنات:</b> <code>[1,2,3]</code> مصفوفة، و<code>{name:'Ahmed'}</code> كائن. استخدم <code>.map()</code> و<code>.filter()</code>.\n\n5️⃣ <b>الدوال:</b> <code>function greet(name) {}</code> أو <code>const greet = (name) =&gt; {}</code> (Arrow Function).\n\n6️⃣ <b>DOM:</b> <code>document.querySelector('.class')</code> بتاخد عنصر من الصفحة، و<code>.innerText</code> بتغيّر محتواه.\n\n7️⃣ <b>الأحداث:</b> <code>element.addEventListener('click', fn)</code> بتخلي كود يتنفذ عند الضغط.\n\n8️⃣ <b>Console والتصحيح:</b> <code>console.log()</code> أهم أداة لمعرفة إيه اللي بيحصل جوه كودك.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل To-Do List باستخدام HTML وCSS وJS بس.\n\n📚 <b>مصادر مجانية:</b> MDN Web Docs، JavaScript.info، freeCodeCamp",
+    "intermediate": "1️⃣ <b>ES6+:</b> Destructuring وSpread بيسهّلوا التعامل مع الكائنات والمصفوفات.\n\n2️⃣ <b>البرمجة غير المتزامنة:</b> <code>Promise</code> و<code>async/await</code> للتعامل مع عمليات هتخلص في المستقبل.\n\n3️⃣ <b>Fetch API:</b> <code>fetch(url).then(res =&gt; res.json())</code> لطلب بيانات من أي API خارجي.\n\n4️⃣ <b>JSON:</b> <code>JSON.parse()</code> و<code>JSON.stringify()</code> أساسيين للتعامل مع أي API.\n\n5️⃣ <b>Modules:</b> <code>export</code> و<code>import</code> بتخليك تقسم كودك لملفات منظمة.\n\n6️⃣ <b>Node.js وNPM:</b> Node بيخلي جافاسكريبت تشتغل على السيرفر، وNPM مدير الحزم.\n\n7️⃣ <b>React أو Vue:</b> أطر عمل لبناء واجهات تفاعلية معقدة بطريقة منظمة.\n\n8️⃣ <b>Git وGitHub:</b> أساسي لأي مشروع حقيقي والتعاون مع فريق.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل Weather App تجيب حالة الطقس من API خارجي.\n\n📚 <b>مصادر مجانية:</b> JavaScript30، The Odin Project، React docs",
+    "advanced": "1️⃣ <b>TypeScript:</b> بيضيف أنواع بيانات ثابتة فوق جافاسكريبت، بيكتشف أخطاء كتير وقت الكتابة.\n\n2️⃣ <b>إدارة الحالة:</b> Redux وZustand وContext API لمشاركة البيانات بين مكونات كتيرة.\n\n3️⃣ <b>Backend بـ Node.js:</b> Express إطار عمل خفيف لبناء APIs.\n\n4️⃣ <b>قواعد البيانات:</b> MongoDB (NoSQL) وPostgreSQL (علائقية).\n\n5️⃣ <b>اختبار الكود:</b> Jest وTesting Library لاختبار الواجهة والمنطق.\n\n6️⃣ <b>أدوات البناء:</b> Vite بديل حديث وأسرع لـ Webpack.\n\n7️⃣ <b>الأداء:</b> تقليل حجم الـ Bundle عن طريق Code Splitting وLazy Loading.\n\n8️⃣ <b>Next.js:</b> إطار عمل فوق React بيضيف Server-Side Rendering وRouting جاهز.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل تطبيق Full-Stack كامل (React + Express + قاعدة بيانات).\n\n📚 <b>مصادر مجانية:</b> TypeScript Handbook، Next.js docs، Fireship على يوتيوب"
+  },
+  "webdev": {
+    "beginner": "1️⃣ <b>HTML:</b> لغة الترميز اللي بتبني هيكل الصفحة، زي <code>&lt;h1&gt;</code>, <code>&lt;p&gt;</code>, <code>&lt;div&gt;</code>, <code>&lt;img&gt;</code>.\n\n2️⃣ <b>CSS:</b> بتتحكم في الشكل — الألوان والخطوط والمسافات، والـ Selectors بتحدد أي عنصر هتنسقه.\n\n3️⃣ <b>Box Model وFlexbox:</b> كل عنصر HTML صندوق له content وpadding وborder وmargin. Flexbox بيسهّل الترتيب.\n\n4️⃣ <b>CSS Grid:</b> نظام تخطيط ثنائي الأبعاد (صفوف وأعمدة)، مثالي للتصميمات المعقدة.\n\n5️⃣ <b>التصميم المتجاوب:</b> <code>@media (max-width: 768px) {}</code> لتغيير التصميم حسب حجم الشاشة.\n\n6️⃣ <b>Forms:</b> <code>&lt;input&gt;</code>, <code>&lt;select&gt;</code>, <code>&lt;textarea&gt;</code> لجمع بيانات المستخدم.\n\n7️⃣ <b>النشر:</b> GitHub Pages بتخليك تنشر موقع بسيط مجاناً في دقايق.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل صفحة Portfolio شخصية متجاوبة.\n\n📚 <b>مصادر مجانية:</b> MDN Web Docs، CSS Tricks، freeCodeCamp Responsive Web Design",
+    "intermediate": "1️⃣ <b>Sass/SCSS:</b> امتداد لـ CSS بيضيف متغيرات وnesting وfunctions.\n\n2️⃣ <b>Tailwind CSS:</b> framework بيدّيك classes جاهزة تكتبها في الـ HTML مباشرة.\n\n3️⃣ <b>JavaScript للتفاعل:</b> إظهار/إخفاء عناصر، Validation، Slideshows.\n\n4️⃣ <b>إمكانية الوصول (a11y):</b> استخدام <code>alt</code> للصور وترتيب صحيح للعناوين.\n\n5️⃣ <b>SEO الأساسي:</b> عناوين وصفية وmeta description وهيكل HTML منظم.\n\n6️⃣ <b>أدوات البناء:</b> Vite بيدّيك Hot Reload فوري وأداء عالي وقت النشر.\n\n7️⃣ <b>الاستضافة الحديثة:</b> Netlify وVercel بينشروا موقعك مباشرة من GitHub.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل Landing Page كامل لمنتج وهمي وانشره على Vercel.\n\n📚 <b>مصادر مجانية:</b> Tailwind CSS docs، web.dev، Frontend Mentor",
+    "advanced": "1️⃣ <b>أطر عمل Frontend:</b> React الأشهر، Vue أبسط، Svelte بيطلع أداء أعلى.\n\n2️⃣ <b>Server-Side Rendering:</b> Next.js وNuxt.js بيرندروا الصفحة على السيرفر الأول.\n\n3️⃣ <b>الأداء:</b> Lighthouse من جوجل، وCore Web Vitals مقاييس ترتيب البحث.\n\n4️⃣ <b>PWA:</b> تطبيقات ويب تتثبت على الموبايل وتشتغل بدون إنترنت.\n\n5️⃣ <b>WebSockets:</b> اتصال مستمر بين المتصفح والسيرفر لتطبيقات الشات اللحظي.\n\n6️⃣ <b>CI/CD للـ Frontend:</b> GitHub Actions لاختبار وبناء تلقائي قبل كل نشر.\n\n7️⃣ <b>اختبار Frontend:</b> Cypress وPlaywright لمحاكاة تفاعل المستخدم الحقيقي.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل تطبيق شات لحظي، أو انشر تطبيق Next.js كامل بـ SSR.\n\n📚 <b>مصادر مجانية:</b> web.dev، Next.js docs، Kevin Powell على يوتيوب"
+  },
+  "sql": {
+    "beginner": "1️⃣ <b>قواعد البيانات العلائقية:</b> البيانات مخزنة في جداول، كل جدول له أعمدة وصفوف.\n\n2️⃣ <b>SELECT وWHERE:</b> <code>SELECT name FROM users WHERE age &gt; 18;</code> أساس أي استعلام.\n\n3️⃣ <b>ORDER BY وLIMIT:</b> لترتيب النتائج وتحديد عددها.\n\n4️⃣ <b>INSERT وUPDATE وDELETE:</b> لإضافة وتعديل ومسح البيانات — احذر تستخدمهم بدون WHERE.\n\n5️⃣ <b>أنواع البيانات:</b> <code>INT</code>, <code>VARCHAR</code>, <code>DATE</code>, <code>BOOLEAN</code>.\n\n6️⃣ <b>المفتاح الأساسي:</b> <code>PRIMARY KEY</code> عمود بيميز كل صف بشكل فريد.\n\n🎯 <b>مشروع تطبيقي:</b> صمم قاعدة بيانات بسيطة لمكتبة كتب.\n\n📚 <b>مصادر مجانية:</b> SQLBolt، W3Schools SQL، Mode SQL Tutorial",
+    "intermediate": "1️⃣ <b>JOIN:</b> بتربط بيانات من جدولين، <code>INNER JOIN</code> للمتطابق، و<code>LEFT JOIN</code> لكل صفوف الجدول الأول.\n\n2️⃣ <b>GROUP BY وHAVING:</b> لتجميع الصفوف وفلترة النتائج المجمّعة.\n\n3️⃣ <b>Subqueries:</b> استعلام جوه استعلام تاني.\n\n4️⃣ <b>المفاتيح الأجنبية:</b> <code>FOREIGN KEY</code> بتربط جدول بجدول تاني وتحافظ على تناسق البيانات.\n\n5️⃣ <b>Indexes:</b> بتسرّع البحث في عمود معين لكن بتبطّئ الكتابة شوية.\n\n6️⃣ <b>Normalization:</b> تقسيم البيانات لجداول متعددة لتقليل التكرار.\n\n7️⃣ <b>SQL من بايثون:</b> SQLAlchemy بتخليك تتعامل مع الجداول ككائنات بايثون.\n\n🎯 <b>مشروع تطبيقي:</b> صمم قاعدة بيانات لنظام إدارة عيادة.\n\n📚 <b>مصادر مجانية:</b> Mode SQL Tutorial، PostgreSQL Tutorial، freeCodeCamp SQL",
+    "advanced": "1️⃣ <b>Query Optimization:</b> <code>EXPLAIN ANALYZE</code> بيوريك خطة تنفيذ الاستعلام.\n\n2️⃣ <b>Transactions وACID:</b> بتضمن إن مجموعة عمليات تتنفذ كلها أو ولا واحدة منها.\n\n3️⃣ <b>Stored Procedures وTriggers:</b> كود SQL يتنفذ تلقائياً عند حدث معين.\n\n4️⃣ <b>Window Functions:</b> زي <code>ROW_NUMBER()</code> و<code>RANK()</code> لحسابات عبر مجموعة صفوف.\n\n5️⃣ <b>Replication وBackup:</b> لحماية البيانات وتوزيع الحمل.\n\n6️⃣ <b>NoSQL مقابل SQL:</b> SQL للبيانات المترابطة، وNoSQL للبيانات المرنة سريعة الكتابة.\n\n7️⃣ <b>Redis للـ Caching:</b> بيخزن نتائج الاستعلامات المتكررة في الذاكرة.\n\n🎯 <b>مشروع تطبيقي:</b> صمم نظام قاعدة بيانات لمتجر إلكتروني مع Caching بـ Redis.\n\n📚 <b>مصادر مجانية:</b> PostgreSQL docs، Use The Index Luke، Redis docs"
+  },
+  "dsa": {
+    "beginner": "1️⃣ <b>المصفوفات والقوائم المرتبطة:</b> المصفوفة سريعة في الوصول العشوائي، والقائمة المرتبطة سريعة في الإضافة من البداية.\n\n2️⃣ <b>Stacks وQueues:</b> الـ Stack بمبدأ LIFO، والـ Queue بمبدأ FIFO.\n\n3️⃣ <b>Big O:</b> قياس كفاءة الخوارزمية. <code>O(1)</code> سريع ثابت، <code>O(n)</code> خطي، <code>O(n²)</code> بطيء مع البيانات الكبيرة.\n\n4️⃣ <b>خوارزميات البحث:</b> Linear Search <code>O(n)</code>، وBinary Search <code>O(log n)</code> للبيانات المرتبة.\n\n5️⃣ <b>خوارزميات الترتيب الأساسية:</b> Bubble وSelection Sort سهلين لكن بطيئين <code>O(n²)</code>.\n\n🎯 <b>تدريب:</b> حل 20 مسألة سهلة على LeetCode أو HackerRank.\n\n📚 <b>مصادر مجانية:</b> freeCodeCamp DSA، visualgo.net، NeetCode على يوتيوب",
+    "intermediate": "1️⃣ <b>الأشجار:</b> Binary Search Tree بيخلي البحث سريع <code>O(log n)</code>.\n\n2️⃣ <b>الرسوم البيانية:</b> BFS بيستكشف طبقة طبقة، وDFS بيستكشف عمق مسار كامل.\n\n3️⃣ <b>Hash Tables:</b> بتوصل للقيمة في <code>O(1)</code> تقريباً — أساس الـ dict في بايثون.\n\n4️⃣ <b>خوارزميات ترتيب متقدمة:</b> Merge Sort وQuick Sort <code>O(n log n)</code>.\n\n5️⃣ <b>Recursion:</b> دالة بتنادي نفسها، لازم يكون ليها حالة توقف.\n\n6️⃣ <b>Dynamic Programming:</b> تخزين نتائج مسائل فرعية متكررة بدل حسابها من الأول.\n\n🎯 <b>تدريب:</b> حل 30 مسألة متوسطة، ركز على Trees وGraphs.\n\n📚 <b>مصادر مجانية:</b> NeetCode 150، Abdul Bari على يوتيوب، LeetCode",
+    "advanced": "1️⃣ <b>Dynamic Programming المتقدم:</b> مسائل متعددة الأبعاد زي Knapsack وLCS.\n\n2️⃣ <b>Greedy Algorithms:</b> أفضل قرار محلي في كل خطوة، أسرع من DP لكن مش دايماً أمثل.\n\n3️⃣ <b>خوارزميات Graph متقدمة:</b> Dijkstra لأقصر مسار، وUnion-Find للمجموعات المتصلة.\n\n4️⃣ <b>Tries وHeaps متقدمة:</b> Trie للبحث عن كلمات، وHeap لأصغر/أكبر عنصر بكفاءة.\n\n5️⃣ <b>Backtracking:</b> استكشاف كل الحلول والتراجع فوراً لو المسار مش هيوصل لحل.\n\n6️⃣ <b>تحليل التعقيد بعمق:</b> الفرق بين Amortized وWorst Case.\n\n7️⃣ <b>التحضير للمقابلات:</b> System Design الأساسي بقى معيار في مقابلات الشركات الكبرى.\n\n🎯 <b>تدريب:</b> حل مسائل صعبة بانتظام، واعمل Mock Interviews.\n\n📚 <b>مصادر مجانية:</b> NeetCode، Grokking System Design، Pramp"
+  }
+};
+
+        const LEARN_TRACKS = [
+            { id: 'python', emoji: '🐍', name: 'بايثون' },
+            { id: 'javascript', emoji: '☕', name: 'جافاسكريبت' },
+            { id: 'webdev', emoji: '🌐', name: 'تطوير الويب' },
+            { id: 'sql', emoji: '🗄️', name: 'SQL وقواعد البيانات' },
+            { id: 'dsa', emoji: '🧠', name: 'هياكل البيانات والخوارزميات' },
+        ];
+        const LEARN_LEVELS = [
+            { id: 'beginner', emoji: '🌱', name: 'مبتدئ' },
+            { id: 'intermediate', emoji: '🌿', name: 'متوسط' },
+            { id: 'advanced', emoji: '🌳', name: 'متقدم' },
+        ];
+        let currentLearnTrack = null;
+
+        function learnShowStep(step) {
+            document.querySelectorAll('.learn-step').forEach(el => el.classList.remove('active'));
+            document.getElementById('learn-step-' + step).classList.add('active');
+        }
+        function learnBackToTracks() {
+            const grid = document.getElementById('learn-tracks-grid');
+            grid.innerHTML = LEARN_TRACKS.map(t =>
+                `<div class="track-btn" onclick="learnOpenTrack('${t.id}')"><span>${t.emoji}</span><label>${t.name}</label></div>`
+            ).join('');
+            learnShowStep('tracks');
+            tg.HapticFeedback.impactOccurred('light');
+        }
+        function learnOpenTrack(trackId) {
+            currentLearnTrack = trackId;
+            const track = LEARN_TRACKS.find(t => t.id === trackId);
+            document.getElementById('learn-levels-title').innerText = `${track.emoji} ${track.name}`;
+            const grid = document.getElementById('learn-levels-grid');
+            grid.innerHTML = LEARN_LEVELS.map(l =>
+                `<div class="level-btn" onclick="learnShowContent('${l.id}')">${l.emoji} ${l.name}</div>`
+            ).join('');
+            learnShowStep('levels');
+            tg.HapticFeedback.impactOccurred('light');
+        }
+        function learnBackToLevels() { learnShowStep('levels'); tg.HapticFeedback.impactOccurred('light'); }
+        function learnShowContent(levelId) {
+            const track = LEARN_TRACKS.find(t => t.id === currentLearnTrack);
+            const level = LEARN_LEVELS.find(l => l.id === levelId);
+            const content = LEARN_CONTENT[currentLearnTrack][levelId];
+            document.getElementById('learn-content-box').innerHTML =
+                `<div style="text-align:center; color:#569cd6; font-weight:bold; margin-bottom:15px;">${track.emoji} ${track.name} — ${level.emoji} ${level.name}</div>` + content;
+            learnShowStep('content');
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+
+    </script>
+</body>
+</html>
