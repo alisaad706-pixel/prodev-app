@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevHub - المنصة الشاملة للمطورين</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --primary-light: rgba(16, 185, 129, 0.1);
+            --danger: #f43f5e;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background-color: #1e293b;
+            border-left: 1px solid var(--card-border);
+            padding: 1.5rem 1rem;
+            height: 100vh;
+            position: fixed;
+            right: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0 0.5rem 1.5rem 0.5rem;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 1.5rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+        }
+
+        .logo-text { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1rem;
+            border-radius: 0.75rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: right;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.95rem;
+        }
+
+        .nav-item:hover { background-color: var(--bg); color: var(--text); }
+        .nav-item.active { background-color: var(--primary); color: #fff; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3); }
+        .nav-item svg { width: 20px; height: 20px; }
+
+        /* Main Content */
+        .main-content {
+            margin-right: 260px;
+            padding: 2rem;
+            flex: 1;
+            width: calc(100% - 260px);
+            transition: margin 0.3s ease;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 { font-size: 2rem; font-weight: 800; color: var(--text); }
+
+        .online-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: var(--card-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            border: 1px solid var(--card-border);
+            font-size: 0.9rem;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Views */
+        .view { display: none; animation: fadeIn 0.5s ease; }
+        .view.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+
+        .stat-info h3 { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .stat-value { font-size: 1.8rem; font-weight: 800; }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-emerald { background: rgba(16, 185, 129, 0.1); color: var(--primary); }
+        .icon-blue { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+        .icon-amber { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .icon-rose { background: rgba(244, 63, 94, 0.1); color: var(--danger); }
+
+        /* Tool Card */
+        .tool-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .tool-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-group { margin-bottom: 1.5rem; }
+        .input-label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
+
+        input[type="text"], input[type="number"], textarea, select {
+            width: 100%;
+            background-color: var(--bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: var(--text);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary); }
+        textarea { min-height: 120px; resize: vertical; }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary { background-color: var(--primary); color: #fff; }
+        .btn-primary:hover { background-color: var(--primary-dark); }
+        .btn-secondary { background-color: var(--card-border); color: var(--text); }
+        .btn-secondary:hover { background-color: #475569; }
+        .btn-block { width: 100%; }
+        .btn-group { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+
+        .output-box {
+            background-color: var(--bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            word-break: break-all;
+            min-height: 60px;
+            margin-top: 1rem;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] { width: 100%; accent-color: var(--primary); }
+        .color-preview { height: 100px; border-radius: 0.5rem; margin-top: 1rem; border: 1px solid var(--card-border); }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            background-color: var(--primary);
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+            transform: translateX(-150%);
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+        }
+
+        .toast.show { transform: translateX(0); }
+        .menu-btn { display: none; background: transparent; border: none; color: var(--text); cursor: pointer; }
+
+        /* Languages Grid */
+        .lang-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .lang-card {
+            background-color: var(--bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .lang-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .lang-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .lang-name { font-weight: 700; font-size: 1rem; }
+        .lang-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+        /* Image Converter */
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            border: 1px solid var(--card-border);
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-right: 0; width: 100%; padding: 1rem; }
+            .menu-btn { display: block; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-icon">&lt;/&gt;</div>
+            <span class="logo-text">DevHub</span>
+        </div>
+        <nav>
+            <button class="nav-item active" onclick="switchView('dashboard')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                لوحة الإحصاءات
+            </button>
+            <button class="nav-item" onclick="switchView('languages')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                لغات البرمجة
+            </button>
+            <button class="nav-item" onclick="switchView('barcode')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h2m4 0h2m4 0h2M4 12h2m4 0h2m4 0h2M4 18h2m4 0h2m4 0h2"/></svg>
+                صانع الباركود
+            </button>
+            <button class="nav-item" onclick="switchView('qrcode')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 3h.01M12 19v3m0-3h.01M12 19a4 4 0 110-8 4 4 0 010 8zm-6 0a4 4 0 118 0H6z"/></svg>
+                صانع QR Code
+            </button>
+            <button class="nav-item" onclick="switchView('uuid')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>
+                مولد UUID
+            </button>
+            <button class="nav-item" onclick="switchView('password')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a4 4 0 11-8 0 4 4 0 018 0zM12 15v8m-4-4h8"/></svg>
+                كلمات المرور
+            </button>
+            <button class="nav-item" onclick="switchView('json')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 5h8m-8 5h8M4 5h16v14H4z"/></svg>
+                منسق JSON
+            </button>
+            <button class="nav-item" onclick="switchView('base64')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H3m18 6v-2a4 4 0 00-4-4h-2M9 7v2a4 4 0 01-4 4H3m18-6v2a4 4 0 01-4 4h-2"/></svg>
+                Base64
+            </button>
+            <button class="nav-item" onclick="switchView('url')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                URL Encoder
+            </button>
+            <button class="nav-item" onclick="switchView('color')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+                محول الألوان
+            </button>
+            <button class="nav-item" onclick="switchView('text')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                تحويل النصوص
+            </button>
+            <button class="nav-item" onclick="switchView('lorem')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                Lorem Ipsum
+            </button>
+            <button class="nav-item" onclick="switchView('image')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                محول الصور
+            </button>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <header class="header">
+            <button class="menu-btn" onclick="toggleSidebar()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <h1 id="page-title">لوحة الإحصاءات</h1>
+            <div class="online-badge">
+                <span class="pulse-dot"></span>
+                <span>أونلاين: <strong id="online-count">24</strong></span>
+            </div>
+        </header>
+
+        <!-- Dashboard View -->
+        <div id="dashboard" class="view active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3>إجمالي الزيارات</h3>
+                        <div class="stat-value" id="total-visits">0</div>
+                    </div>
+                    <div class="stat-icon icon-emerald">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-2a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3>زيارات اليوم</h3>
+                        <div class="stat-value" id="today-visits">0</div>
+                    </div>
+                    <div class="stat-icon icon-blue">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3>المستخدمون النشطون</h3>
+                        <div class="stat-value" id="active-users">24</div>
+                    </div>
+                    <div class="stat-icon icon-amber">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3>متوسط الجلسة</h3>
+                        <div class="stat-value">4m 20s</div>
+                    </div>
+                    <div class="stat-icon icon-rose">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                </div>
+            </div>
+            <div class="tool-card">
+                <div class="tool-title">مرحباً بك في DevHub</div>
+                <p style="color: var(--text-muted); line-height: 1.8;">منصة شاملة تضم جميع الأدوات التي يحتاجها المبرمجون والمطورون في عملهم اليومي. استخدم القائمة الجانبية للتنقل بين الأدوات المختلفة. تم تصميم الموقع بواجهة عصرية وانتقالات سلسة لتجربة استخدام مريحة.</p>
+            </div>
+        </div>
+
+        <!-- Languages View -->
+        <div id="languages" class="view">
+            <div class="tool-card">
+                <div class="tool-title">لغات البرمجة الشائعة</div>
+                <div class="lang-grid">
+                    <div class="lang-card" onclick="showLangInfo('JavaScript', 'لغة برمجة تستخدم بشكل أساسي لتطوير الويب التفاعلي.')">
+                        <div class="lang-icon">🟨</div>
+                        <div class="lang-name">JavaScript</div>
+                        <div class="lang-desc">تطوير الويب</div>
+                    </div>
+                    <div class="lang-card" onclick="showLangInfo('Python', 'لغة برمجة قوية وسهلة التعلم، تستخدم في الذكاء الاصطناعي وتحليل البيانات.')">
+                        <div class="lang-icon">🐍</div>
+                        <div class="lang-name">Python</div>
+                        <div class="lang-desc">ذكاء اصطناعي</div>
+                    </div>
+                    <div class="lang-card" onclick="showLangInfo('Java', 'لغة برمجة قوية ومستقلة عن المنصة، تستخدم في تطبيقات المؤسسات والأندرويد.')">
+                        <div class="lang-icon">☕</div>
+                        <div class="lang-name">Java</div>
+                        <div class="lang-desc">تطبيقات المؤسسات</div>
+                    </div>
+                    <div class="lang-card" onclick="showLangInfo('C++', 'لغة برمجة منخفضة المستوى تستخدم في تطوير الألعاب والأنظمة.')">
+                        <div class="lang-icon">➕</div>
+                        <div class="lang-name">C++</div>
+                        <div class="lang-desc">تطوير الألعاب</div>
+                    </div>
+                    <div class="lang-card" onclick="showLangInfo('C#', 'لغة برمجة من مايكروسوفت، تستخدم في تطبيقات .NET وتطوير الألعاب ب Unity.')">
+                        <div class="lang-icon">#️⃣</div>
+                        <div class="lang-name">C#</div>
+                        <div class="lang-desc">تطوير .NET</div>
+                    </div>
+                    <div class="lang-card" onclick="showLangInfo('PHP', 'لغة برمجة خادمية تستخدم في تطوير المواقع الديناميكية.')">
+                        <div class="lang-icon">🐘</div>
+                        <div class="lang-name">PHP</div>
+                        <div class="lang-desc">تطوير الويب</div>
+                    </div>
+                    <div class="lang-card" onclick="showLangInfo('Ruby', 'لغة برمجة ديناميكية تركز على البساطة والإنتاجية.')">
+                        <div class="lang-icon">💎</div>
+                        <div class="lang-name">Ruby</div>
+                        <div class="lang-desc">تطوير الويب</div>
+                    </div>
+                    <div class="lang-card" onclick="showLangInfo('Go', 'لغة برمجة حديثة من جوجل، تتميز بالأداء العالي والتزامن.')">
+                        <div class="lang-icon">🐹</div>
+                        <div class="lang-name">Go</div>
+                        <div class="lang-desc">أنظمة موزعة</div>
+                    </div>
+                    <div class="lang-card" onclick="showLangInfo('Swift', 'لغة برمجة من Apple لتطوير تطبيقات iOS و macOS.')">
+                        <div class="lang-icon">🐦</div>
+                        <div class="lang-name">Swift</div>
+                        <div class="lang-desc">تطبيقات Apple</div>
+                    </div>
+                    <div class="lang-card" onclick="showLangInfo('Kotlin', 'لغة برمجة حديثة لتطوير تطبيقات الأندرويد.')">
+                        <div class="lang-icon">🟣</div>
+                        <div class="lang-name">Kotlin</div>
+                        <div class="lang-desc">تطبيقات Android</div>
+                    </div>
+                    <div class="lang-card" onclick="showLangInfo('TypeScript', 'نسخة مطورة من JavaScript تضيف نظام أنواع قوي.')">
+                        <div class="lang-icon">🔷</div>
+                        <div class="lang-name">TypeScript</div>
+                        <div class="lang-desc">تطوير الويب</div>
+                    </div>
+                    <div class="lang-card" onclick="showLangInfo('Rust', 'لغة برمجة تركز على الأمان والأداء العالي.')">
+                        <div class="lang-icon">🦀</div>
+                        <div class="lang-name">Rust</div>
+                        <div class="lang-desc">أنظمة وأمان</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barcode Generator -->
+        <div id="barcode" class="view">
+            <div class="tool-card">
+                <div class="tool-title">صانع الباركود</div>
+                <div class="input-group">
+                    <label class="input-label">أدخل النص أو الرقم</label>
+                    <input type="text" id="barcode-input" value="123456789012" placeholder="أدخل النص">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">نوع الباركود</label>
+                    <select id="barcode-type">
+                        <option value="CODE128">CODE128 (افتراضي)</option>
+                        <option value="CODE39">CODE39</option>
+                        <option value="EAN13">EAN13 (13 رقم)</option>
+                        <option value="UPC">UPC (12 رقم)</option>
+                        <option value="ITF14">ITF14 (14 رقم)</option>
+                        <option value="MSI">MSI</option>
+                        <option value="pharmacode">Pharmacode</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="generateBarcode()">توليد الباركود</button>
+                <div style="text-align: center; margin-top: 2rem; background: #fff; padding: 2rem; border-radius: 0.5rem;">
+                    <svg id="barcode-svg"></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code Generator -->
+        <div id="qrcode" class="view">
+            <div class="tool-card">
+                <div class="tool-title">صانع QR Code</div>
+                <div class="input-group">
+                    <label class="input-label">أدخل النص أو الرابط</label>
+                    <input type="text" id="qrcode-input" placeholder="https://example.com" oninput="generateQRCode()">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">الحجم</label>
+                    <input type="range" min="100" max="300" value="200" oninput="generateQRCode(this.value)" id="qr-size">
+                </div>
+                <div style="text-align: center; margin-top: 2rem; background: #fff; padding: 2rem; border-radius: 0.5rem; display: flex; justify-content: center;">
+                    <div id="qrcode"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- UUID Generator -->
+        <div id="uuid" class="view">
+            <div class="tool-card">
+                <div class="tool-title">مولد UUID</div>
+                <button class="btn btn-primary btn-block" onclick="generateUUID()">توليد UUID جديد</button>
+                <div class="output-box" id="uuid-output" style="margin-top: 2rem;">النتيجة ستظهر هنا</div>
+                <button class="btn btn-secondary btn-block" style="margin-top: 1rem;" onclick="copyText(document.getElementById('uuid-output').innerText)">نسخ النتيجة</button>
+            </div>
+        </div>
+
+        <!-- Password Generator -->
+        <div id="password" class="view">
+            <div class="tool-card">
+                <div class="tool-title">مولد كلمات المرور</div>
+                <div class="input-group">
+                    <input type="text" id="password-output" readonly placeholder="كلمة المرور ستظهر هنا">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">الطول: <span id="length-value">16</span></label>
+                    <input type="range" min="8" max="32" value="16" oninput="document.getElementById('length-value').innerText = this.value">
+                </div>
+                <div class="checkbox-group">
+                    <label class="checkbox-label"><input type="checkbox" id="upper" checked> أحرف كبيرة (A-Z)</label>
+                    <label class="checkbox-label"><input type="checkbox" id="lower" checked> أحرف صغيرة (a-z)</label>
+                    <label class="checkbox-label"><input type="checkbox" id="numbers" checked> أرقام (0-9)</label>
+                    <label class="checkbox-label"><input type="checkbox" id="symbols" checked> رموز (!@#$)</label>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="generatePassword()">توليد كلمة المرور</button>
+            </div>
+        </div>
+
+        <!-- JSON Formatter -->
+        <div id="json" class="view">
+            <div class="tool-card">
+                <div class="tool-title">منسق JSON</div>
+                <div class="input-group">
+                    <label class="input-label">أدخل JSON غير منسق</label>
+                    <textarea id="json-input" placeholder='{"name":"DevHub","type":"tool"}'></textarea>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="formatJSON()">تنسيق JSON</button>
+                <div class="output-box" id="json-output" style="min-height: 150px; white-space: pre-wrap;">النتيجة ستظهر هنا</div>
+            </div>
+        </div>
+
+        <!-- Base64 -->
+        <div id="base64" class="view">
+            <div class="tool-card">
+                <div class="tool-title">أداة Base64</div>
+                <div class="input-group">
+                    <textarea id="base64-input" placeholder="أدخل النص هنا..."></textarea>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" style="flex: 1;" onclick="encodeBase64()">تشفير</button>
+                    <button class="btn btn-secondary" style="flex: 1;" onclick="decodeBase64()">فك التشفير</button>
+                </div>
+                <div class="output-box" id="base64-output">النتيجة ستظهر هنا</div>
+            </div>
+        </div>
+
+        <!-- URL Encoder -->
+        <div id="url" class="view">
+            <div class="tool-card">
+                <div class="tool-title">أداة URL Encoder</div>
+                <div class="input-group">
+                    <textarea id="url-input" placeholder="أدخل الرابط أو النص..."></textarea>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" style="flex: 1;" onclick="encodeURL()">تشفير</button>
+                    <button class="btn btn-secondary" style="flex: 1;" onclick="decodeURL()">فك التشفير</button>
+                </div>
+                <div class="output-box" id="url-output">النتيجة ستظهر هنا</div>
+            </div>
+        </div>
+
+        <!-- Color Converter -->
+        <div id="color" class="view">
+            <div class="tool-card">
+                <div class="tool-title">محول الألوان</div>
+                <div class="input-group">
+                    <label class="input-label">اختر اللون</label>
+                    <input type="color" id="color-picker" style="width: 100%; height: 50px; cursor: pointer; background: transparent; border: 1px solid var(--card-border); border-radius: 0.5rem;" oninput="convertColor(this.value)">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">HEX</label>
+                    <input type="text" id="hex-value" oninput="convertColor(this.value)">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">RGB</label>
+                    <input type="text" id="rgb-value" readonly>
+                </div>
+                <div class="color-preview" id="color-preview"></div>
+            </div>
+        </div>
+
+        <!-- Text Case Converter -->
+        <div id="text" class="view">
+            <div class="tool-card">
+                <div class="tool-title">تحويل حالة النص</div>
+                <div class="input-group">
+                    <textarea id="text-input" placeholder="أدخل النص هنا..."></textarea>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" style="flex: 1;" onclick="convertCase('upper')">UPPERCASE</button>
+                    <button class="btn btn-secondary" style="flex: 1;" onclick="convertCase('lower')">lowercase</button>
+                    <button class="btn btn-secondary" style="flex: 1;" onclick="convertCase('title')">Title Case</button>
+                </div>
+                <div class="output-box" id="text-output">النتيجة ستظهر هنا</div>
+            </div>
+        </div>
+
+        <!-- Lorem Ipsum -->
+        <div id="lorem" class="view">
+            <div class="tool-card">
+                <div class="tool-title">مولد Lorem Ipsum</div>
+                <div class="input-group">
+                    <label class="input-label">عدد الفقرات</label>
+                    <input type="number" id="lorem-count" value="3" min="1" max="10">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="generateLorem()">توليد النص</button>
+                <div class="output-box" id="lorem-output" style="min-height: 150px; white-space: pre-wrap;">النتيجة ستظهر هنا</div>
+            </div>
+        </div>
+
+        <!-- Image Converter -->
+        <div id="image" class="view">
+            <div class="tool-card">
+                <div class="tool-title">محول الصور (Base64)</div>
+                <div class="input-group">
+                    <label class="input-label">اختر صورة</label>
+                    <input type="file" id="image-input" accept="image/*" onchange="convertImage()" style="padding: 0.5rem;">
+                </div>
+                <img id="image-preview" class="image-preview" alt="Preview">
+                <div class="output-box" id="image-output" style="min-height: 100px; margin-top: 1rem;">كود Base64 سيظهر هنا</div>
+                <button class="btn btn-secondary btn-block" style="margin-top: 1rem;" onclick="copyText(document.getElementById('image-output').innerText)">نسخ الكود</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="toast" id="toast">تم النسخ بنجاح!</div>
+
+    <script>
+        // View Switching
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(viewId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            const titles = {
+                'dashboard': 'لوحة الإحصاءات',
+                'languages': 'لغات البرمجة',
+                'barcode': 'صانع الباركود',
+                'qrcode': 'صانع QR Code',
+                'uuid': 'مولد UUID',
+                'password': 'مولد كلمات المرور',
+                'json': 'منسق JSON',
+                'base64': 'أداة Base64',
+                'url': 'أداة URL Encoder',
+                'color': 'محول الألوان',
+                'text': 'تحويل النصوص',
+                'lorem': 'مولد Lorem Ipsum',
+                'image': 'محول الصور'
+            };
+            document.getElementById('page-title').innerText = titles[viewId];
+            
+            if(window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // Toast Notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function copyText(text) {
+            if(text && text !== 'النتيجة ستظهر هنا' && text !== 'كود Base64 سيظهر هنا') {
+                navigator.clipboard.writeText(text);
+                showToast('تم النسخ بنجاح!');
+            }
+        }
+
+        // Stats Logic
+        function updateStats() {
+            let stats = JSON.parse(localStorage.getItem('devhub_stats') || '{}');
+            const today = new Date().toDateString();
+            
+            if (!stats.total) {
+                stats = { total: 15420, today: 1, lastVisit: today };
+            } else {
+                stats.total += 1;
+                if (stats.lastVisit !== today) {
+                    stats.today = 1;
+                    stats.lastVisit = today;
+                } else {
+                    stats.today += 1;
+                }
+            }
+            localStorage.setItem('devhub_stats', JSON.stringify(stats));
+            document.getElementById('total-visits').innerText = stats.total.toLocaleString();
+            document.getElementById('today-visits').innerText = stats.today.toLocaleString();
+        }
+
+        // Simulate Active Users
+        setInterval(() => {
+            const activeUsers = 20 + Math.floor(Math.random() * 10);
+            document.getElementById('active-users').innerText = activeUsers;
+            document.getElementById('online-count').innerText = activeUsers;
+        }, 5000);
+
+        // Language Info
+        function showLangInfo(name, desc) {
+            showToast(`${name}: ${desc}`);
+        }
+
+        // Barcode Generator
+        function generateBarcode() {
+            const value = document.getElementById('barcode-input').value;
+            const type = document.getElementById('barcode-type').value;
+            if(value) {
+                JsBarcode("#barcode-svg", value, { format: type, lineColor: "#000", width: 2, height: 100, displayValue: true });
+            }
+        }
+
+        // QR Code Generator
+        function generateQRCode(size) {
+            const text = document.getElementById('qrcode-input').value || 'https://example.com';
+            const qrSize = size || 200;
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, {
+                text: text,
+                width: qrSize,
+                height: qrSize,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        // UUID Generator
+        function generateUUID() {
+            const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                const r = Math.random() * 16 | 0;
+                const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+            document.getElementById('uuid-output').innerText = uuid;
+        }
+
+        // Password Generator
+        function generatePassword() {
+            const length = document.getElementById('length-value').innerText;
+            const upper = document.getElementById('upper').checked;
+            const lower = document.getElementById('lower').checked;
+            const numbers = document.getElementById('numbers').checked;
+            const symbols = document.getElementById('symbols').checked;
+            
+            let chars = '';
+            if (upper) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            if (lower) chars += 'abcdefghijklmnopqrstuvwxyz';
+            if (numbers) chars += '0123456789';
+            if (symbols) chars += '!@#$%^&*()_+~`|}{[]:;?><,./-=';
+            
+            if (!chars) {
+                showToast('يرجى اختيار خيار واحد على الأقل!');
+                return;
+            }
+            
+            let password = '';
+            for (let i = 0; i < length; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('password-output').value = password;
+        }
+
+        // JSON Formatter
+        function formatJSON() {
+            const input = document.getElementById('json-input').value;
+            try {
+                const parsed = JSON.parse(input);
+                document.getElementById('json-output').innerText = JSON.stringify(parsed, null, 2);
+                document.getElementById('json-output').style.color = 'var(--primary)';
+            } catch (e) {
+                document.getElementById('json-output').innerText = 'خطأ: صيغة JSON غير صحيحة';
+                document.getElementById('json-output').style.color = 'var(--danger)';
+            }
+        }
+
+        // Base64
+        function encodeBase64() {
+            const input = document.getElementById('base64-input').value;
+            try {
+                document.getElementById('base64-output').innerText = btoa(unescape(encodeURIComponent(input)));
+            } catch (e) {
+                showToast('فشل التشفير!');
+            }
+        }
+        function decodeBase64() {
+            const input = document.getElementById('base64-input').value;
+            try {
+                document.getElementById('base64-output').innerText = decodeURIComponent(escape(atob(input)));
+            } catch (e) {
+                showToast('فشل فك التشفير!');
+            }
+        }
+
+        // URL Encoder
+        function encodeURL() {
+            const input = document.getElementById('url-input').value;
+            document.getElementById('url-output').innerText = encodeURIComponent(input);
+        }
+        function decodeURL() {
+            const input = document.getElementById('url-input').value;
+            document.getElementById('url-output').innerText = decodeURIComponent(input);
+        }
+
+        // Color Converter
+        function convertColor(hex) {
+            if (!hex.startsWith('#')) hex = '#' + hex;
+            document.getElementById('color-picker').value = hex;
+            document.getElementById('hex-value').value = hex;
+            
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            if (result) {
+                const r = parseInt(result[1], 16);
+                const g = parseInt(result[2], 16);
+                const b = parseInt(result[3], 16);
+                document.getElementById('rgb-value').value = `rgb(${r}, ${g}, ${b})`;
+                document.getElementById('color-preview').style.backgroundColor = hex;
+            }
+        }
+
+        // Text Case Converter
+        function convertCase(type) {
+            const text = document.getElementById('text-input').value;
+            let result = '';
+            switch(type) {
+                case 'upper': result = text.toUpperCase(); break;
+                case 'lower': result = text.toLowerCase(); break;
+                case 'title': result = text.replace(/\w\S*/g, (t) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()); break;
+            }
+            document.getElementById('text-output').innerText = result;
+        }
+
+        // Lorem Ipsum
+        function generateLorem() {
+            const count = document.getElementById('lorem-count').value || 3;
+            const text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+            document.getElementById('lorem-output').innerText = Array(parseInt(count)).fill(text).join('\n\n');
+        }
+
+        // Image Converter
+        function convertImage() {
+            const file = document.getElementById('image-input').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('image-preview').src = e.target.result;
+                    document.getElementById('image-preview').style.display = 'block';
+                    document.getElementById('image-output').innerText = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Initialize
+        window.onload = () => {
+            updateStats();
+            convertColor('#10b981');
+            generateBarcode();
+            generateQRCode();
+        };
+    </script>
+</body>
+</html>
