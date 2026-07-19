@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProDev Hub | مركز أدوات المطور الشامل</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+    .toast { animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    .code-out { direction: ltr; text-align: left; }
+    input[type=range] { accent-color: #0d9488; }
+    input[type=checkbox] { accent-color: #0d9488; }
+  </style>
+</head>
+<body class="text-slate-900 min-h-screen">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 border-b border-teal-100/80 bg-white/80 backdrop-blur-lg">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+      <button onclick="navigate('home')" class="flex items-center gap-2">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-teal-600 to-emerald-500 shadow-md shadow-teal-500/30">
+          <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+        </div>
+        <div class="text-right">
+          <div class="font-bold text-lg leading-none">ProDev Hub</div>
+          <div class="text-[10px] font-medium text-teal-600">مركز أدوات المطور</div>
+        </div>
+      </button>
+      <nav id="desktop-nav" class="hidden md:flex items-center gap-1 flex-wrap"></nav>
+      <a href="https://alisaad706-pixel.github.io/prodev-app/" target="_blank" class="hidden lg:flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50/50 px-3 py-1.5 hover:bg-teal-100 transition">
+        <span class="relative flex h-2 w-2">
+          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+        </span>
+        <span class="text-xs font-semibold text-teal-700">بوت تليجرام متاح</span>
+      </a>
+    </div>
+    <nav id="mobile-nav" class="flex md:hidden items-center gap-1 overflow-x-auto px-3 pb-2"></nav>
+  </header>
+
+  <!-- Main -->
+  <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+    <div id="content" class="fade-in"></div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200 bg-white">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 text-center text-sm text-slate-500">
+      <p>ProDev Hub — مرجعك البرمجي المتكامل © 2026</p>
+      <div class="mt-3 flex justify-center">
+        <img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Falisaad706-pixel.github.io%2Fprodev-app%2F&label=%D8%B2%D9%88%D8%A7%D8%B1%20%D8%A7%D9%84%D9%85%D9%88%D9%82%D8%B9&icon=eye-fill&color=%230d9488" alt="visitors" height="20">
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 hidden rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-lg z-50"></div>
+
+  <script>
+    const NAV_ITEMS = [
+      { id: "home", label: "🏠 الرئيسية" },
+      { id: "tools", label: "🛠️ الأدوات" },
+      { id: "learn", label: "🎓 تعلم البرمجة" },
+      { id: "snippets", label: "📄 مقتطفات" },
+      { id: "colors", label: "🎨 ألوان" },
+      { id: "resources", label: "📚 مصادر" }
+    ];
+
+    let currentSection = "home";
+
+    function init() {
+      buildNav();
+      navigate("home");
+    }
+
+    function buildNav() {
+      const html = NAV_ITEMS.map(item => `
+        <button onclick="navigate('${item.id}')" class="nav-btn flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors text-slate-600 hover:bg-slate-100 hover:text-slate-900" data-section="${item.id}">
+          ${item.label}
+        </button>
+      `).join("");
+      document.getElementById("desktop-nav").innerHTML = html;
+      document.getElementById("mobile-nav").innerHTML = html;
+    }
+
+    function navigate(section) {
+      currentSection = section;
+      const content = document.getElementById("content");
+      content.classList.remove("fade-in");
+      void content.offsetWidth;
+      content.classList.add("fade-in");
+
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        if (btn.dataset.section === section) {
+          btn.classList.add("bg-teal-50", "text-teal-700");
+          btn.classList.remove("text-slate-600", "hover:bg-slate-100", "hover:text-slate-900");
+        } else {
+          btn.classList.remove("bg-teal-50", "text-teal-700");
+          btn.classList.add("text-slate-600", "hover:bg-slate-100", "hover:text-slate-900");
+        }
+      });
+
+      const renderers = { home: renderHome, tools: renderTools, learn: renderLearn, snippets: renderSnippets, colors: renderColors, resources: renderResources };
+      content.innerHTML = renderers[section] ? renderers[section]() : renderHome();
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (section === "tools") openToolCategory('data');
+      if (section === "learn") learnBackToTracks();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.remove("hidden");
+      toast.classList.add("toast");
+      setTimeout(() => {
+        toast.classList.add("hidden");
+        toast.classList.remove("toast");
+      }, 2000);
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => showToast("✅ تم النسخ بنجاح!"));
+    }
+
+    function renderHome() {
+      const features = [
+        { section: "tools", title: "🛠️ أدوات ذكية", desc: "29 أداة برمجية تفاعلية: JSON، Base64، Regex، QR، وأكتر", color: "from-teal-500 to-emerald-500" },
+        { section: "learn", title: "🎓 تعلم البرمجة", desc: "خرائط طريق كاملة من الصفر للاحتراف في 5 مسارات", color: "from-sky-500 to-blue-500" },
+        { section: "snippets", title: "📄 مقتطفات جاهزة", desc: "مكتبة من المقتطفات البرمجية الجاهزة للاستخدام", color: "from-amber-500 to-orange-500" },
+        { section: "colors", title: "🎨 لوحات ألوان", desc: "لوحات ألوان منسّقة ومحوّل ألوان لإلهام تصميمك", color: "from-rose-500 to-pink-500" },
+        { section: "resources", title: "📚 مصادر تعلّم", desc: "روابط لأهم المراجع ومقتطفات مرجعية سريعة", color: "from-indigo-500 to-violet-500" }
+      ];
+
+      return `
+        <div class="space-y-10">
+          <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-700 via-teal-600 to-emerald-600 p-8 shadow-xl shadow-teal-600/20 sm:p-12">
+            <div class="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-2xl"></div>
+            <div class="absolute -bottom-24 -right-10 h-72 w-72 rounded-full bg-emerald-300/20 blur-3xl"></div>
+            <div class="relative">
+              <span class="mb-4 inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs text-teal-50">منصة شاملة للمطورين</span>
+              <h1 class="text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl">
+                كل ما يحتاجه المبرمج<br>
+                <span class="text-emerald-200">في مكان واحد</span>
+              </h1>
+              <p class="mt-4 max-w-xl text-base leading-relaxed text-teal-50/90 sm:text-lg">
+                29 أداة تفاعلية، مقتطفات برمجية، لوحات ألوان، وخرائط تعلّم كاملة من الصفر للاحتراف — كل ما تحتاجه في رحلتك البرمجية.
+              </p>
+              <div class="mt-6 flex flex-wrap gap-3">
+                <button onclick="navigate('tools')" class="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-teal-700 shadow-sm transition hover:bg-teal-50">ابدأ الاستكشاف →</button>
+                <button onclick="navigate('learn')" class="rounded-xl border border-white/30 bg-transparent px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">تعلّم البرمجة</button>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div class="mb-4 flex items-center gap-2">
+              <h2 class="text-xl font-bold text-slate-800">أقسام الموقع</h2>
+            </div>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              ${features.map(f => `
+                <button onclick="navigate('${f.section}')" class="group text-right">
+                  <div class="h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
+                    <div class="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${f.color} shadow-md text-xl">
+                      ${f.title.split(' ')[0]}
+                    </div>
+                    <div class="flex items-center justify-between text-lg font-bold">
+                      ${f.title.split(' ').slice(1).join(' ')}
+                      <svg class="h-4 w-4 text-slate-400 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                    <p class="mt-1 text-sm leading-relaxed text-slate-500">${f.desc}</p>
+                  </div>
+                </button>
+              `).join("")}
+            </div>
+          </section>
+
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+            <p class="text-sm text-slate-500 mb-2">👁️ زوار الموقع (عداد حقيقي)</p>
+            <img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Falisaad706-pixel.github.io%2Fprodev-app%2F&label=%D8%A7%D9%84%D8%B2%D9%88%D8%A7%D8%B1&icon=eye-fill&color=%230d9488" alt="visitors" height="28" class="mx-auto">
+          </section>
+        </div>
+      `;
+    }
+const LEARN_CONTENT = {
+  "python": {
+    "beginner": "1️⃣ <b>التثبيت والإعداد:</b> نزّل بايثون من python.org وثبّت VS Code كمحرر أكواد. شغّل <code>python --version</code> في الـ terminal للتأكد إنه اتثبت صح.\n\n2️⃣ <b>المتغيرات وأنواع البيانات:</b> المتغير هو اسم بيخزن قيمة، زي <code>age = 25</code>. الأنواع الأساسية: <code>int</code> (أرقام صحيحة)، <code>float</code> (أرقام عشرية)، <code>str</code> (نصوص)، <code>bool</code> (True/False).\n\n3️⃣ <b>العمليات والمقارنات:</b> <code>+ - * /</code> للحساب، و<code>== != &gt; &lt;</code> للمقارنة.\n\n4️⃣ <b>الشروط:</b> <code>if condition:</code> تنفّذ كود لو الشرط صح، و<code>elif</code> لشروط إضافية، و<code>else</code> للحالة الافتراضية.\n\n5️⃣ <b>الحلقات:</b> <code>for item in list:</code> بتكرر على عناصر قائمة، و<code>while condition:</code> بتكرر طالما الشرط صح.\n\n6️⃣ <b>القوائم والقواميس:</b> <code>list = [1,2,3]</code> تخزن عناصر مرتبة، و<code>dict = {'key':'value'}</code> تخزن أزواج مفتاح-قيمة.\n\n7️⃣ <b>الدوال:</b> <code>def greet(name):</code> بتعرّف دالة تقدر تستدعيها بدل تكرار الكود، واستخدم <code>return</code> لإرجاع قيمة.\n\n8️⃣ <b>معالجة الأخطاء:</b> <code>try/except</code> بتمنع البرنامج من التوقف المفاجئ لو حصل خطأ.\n\n9️⃣ <b>الملفات:</b> <code>open('file.txt', 'r')</code> لقراءة ملف، و<code>'w'</code> للكتابة. استخدم <code>with open(...) as f:</code> عشان الملف يتقفل تلقائياً.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل آلة حاسبة بسيطة أو لعبة تخمين رقم عشوائي.\n\n📚 <b>مصادر مجانية:</b> python.org/doc، W3Schools Python، freeCodeCamp Python Course",
+    "intermediate": "1️⃣ <b>البرمجة كائنية التوجه:</b> <code>class Car:</code> بتعرّف نوع بيانات مخصص، والـ Inheritance بيخلي كلاس يورث سلوك كلاس تاني.\n\n2️⃣ <b>Comprehensions:</b> <code>[x*2 for x in range(10)]</code> طريقة مختصرة لإنشاء قائمة من حلقة في سطر واحد.\n\n3️⃣ <b>الوحدات والحزم:</b> <code>import math</code> بتستورد كود جاهز. استخدم <code>pip install &lt;package&gt;</code> لتثبيت مكتبات خارجية.\n\n4️⃣ <b>البيئات الافتراضية:</b> <code>python -m venv venv</code> بتعزل مكتبات مشروعك عن باقي النظام.\n\n5️⃣ <b>JSON وAPIs:</b> مكتبة <code>requests</code> بتخليك تتواصل مع أي API خارجي.\n\n6️⃣ <b>Decorators وGenerators:</b> الـ Decorator بيضيف سلوك لدالة من غير تعديل كودها، والـ Generator بيرجع قيم واحدة واحدة.\n\n7️⃣ <b>اختبار الكود:</b> <code>pytest</code> بتخليك تكتب اختبارات تتأكد إن كودك شغال صح تلقائياً.\n\n8️⃣ <b>قواعد البيانات:</b> <code>sqlite3</code> مدمجة في بايثون، و<code>SQLAlchemy</code> بتدّيك ORM.\n\n9️⃣ <b>Git:</b> <code>git add</code>, <code>git commit</code>, <code>git push</code> أساسيات حفظ ومشاركة كودك.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل Telegram Bot، أو REST API بسيط بـ Flask.\n\n📚 <b>مصادر مجانية:</b> Real Python، Corey Schafer على يوتيوب، docs.python-telegram-bot.org",
+    "advanced": "1️⃣ <b>البرمجة غير المتزامنة:</b> <code>async def</code> و<code>await</code> بتخليك تشغّل عمليات متعددة من غير ما توقف البرنامج كله.\n\n2️⃣ <b>Design Patterns:</b> حلول جاهزة لمشاكل تصميم متكررة، زي Singleton وFactory.\n\n3️⃣ <b>تحسين الأداء:</b> استخدم <code>cProfile</code> لمعرفة أبطأ جزء في كودك. <code>multiprocessing</code> و<code>threading</code> لتوازي العمليات.\n\n4️⃣ <b>بناء وتوزيع الحزم:</b> <code>pyproject.toml</code> وأدوات زي <code>poetry</code> لنشر مكتبتك على PyPI.\n\n5️⃣ <b>أطر عمل متقدمة:</b> Django لمواقع كبيرة، وFastAPI أخف وأسرع لبناء APIs حديثة.\n\n6️⃣ <b>CI/CD وDocker:</b> Docker بيحزم تطبيقك في container شغال بنفس الطريقة في أي مكان.\n\n7️⃣ <b>قواعد بيانات إنتاجية:</b> PostgreSQL وRedis كـ cache سريع.\n\n8️⃣ <b>كود نظيف:</b> مبادئ SOLID بتساعدك تكتب كود سهل الصيانة.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل نظام Microservices بسيط، أو تطبيق FastAPI كامل مع JWT authentication.\n\n📚 <b>مصادر مجانية:</b> FastAPI docs، Django docs، ArjanCodes على يوتيوب"
+  },
+  "javascript": {
+    "beginner": "1️⃣ <b>المتغيرات:</b> استخدم <code>let</code> للمتغيرات المتغيرة، و<code>const</code> للقيم الثابتة، وتجنب <code>var</code> القديمة.\n\n2️⃣ <b>الشروط:</b> <code>if/else</code> و<code>switch</code> لحالات كتير لنفس المتغير.\n\n3️⃣ <b>الحلقات:</b> <code>for</code> للتكرار المحدد، و<code>forEach</code> للتكرار على عناصر مصفوفة.\n\n4️⃣ <b>المصفوفات والكائنات:</b> <code>[1,2,3]</code> مصفوفة، و<code>{name:'Ahmed'}</code> كائن. استخدم <code>.map()</code> و<code>.filter()</code>.\n\n5️⃣ <b>الدوال:</b> <code>function greet(name) {}</code> أو <code>const greet = (name) =&gt; {}</code> (Arrow Function).\n\n6️⃣ <b>DOM:</b> <code>document.querySelector('.class')</code> بتاخد عنصر من الصفحة، و<code>.innerText</code> بتغيّر محتواه.\n\n7️⃣ <b>الأحداث:</b> <code>element.addEventListener('click', fn)</code> بتخلي كود يتنفذ عند الضغط.\n\n8️⃣ <b>Console والتصحيح:</b> <code>console.log()</code> أهم أداة لمعرفة إيه اللي بيحصل جوه كودك.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل To-Do List باستخدام HTML وCSS وJS بس.\n\n📚 <b>مصادر مجانية:</b> MDN Web Docs، JavaScript.info، freeCodeCamp",
+    "intermediate": "1️⃣ <b>ES6+:</b> Destructuring وSpread بيسهّلوا التعامل مع الكائنات والمصفوفات.\n\n2️⃣ <b>البرمجة غير المتزامنة:</b> <code>Promise</code> و<code>async/await</code> للتعامل مع عمليات هتخلص في المستقبل.\n\n3️⃣ <b>Fetch API:</b> <code>fetch(url).then(res =&gt; res.json())</code> لطلب بيانات من أي API خارجي.\n\n4️⃣ <b>JSON:</b> <code>JSON.parse()</code> و<code>JSON.stringify()</code> أساسيين للتعامل مع أي API.\n\n5️⃣ <b>Modules:</b> <code>export</code> و<code>import</code> بتخليك تقسم كودك لملفات منظمة.\n\n6️⃣ <b>Node.js وNPM:</b> Node بيخلي جافاسكريبت تشتغل على السيرفر، وNPM مدير الحزم.\n\n7️⃣ <b>React أو Vue:</b> أطر عمل لبناء واجهات تفاعلية معقدة بطريقة منظمة.\n\n8️⃣ <b>Git وGitHub:</b> أساسي لأي مشروع حقيقي والتعاون مع فريق.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل Weather App تجيب حالة الطقس من API خارجي.\n\n📚 <b>مصادر مجانية:</b> JavaScript30، The Odin Project، React docs",
+    "advanced": "1️⃣ <b>TypeScript:</b> بيضيف أنواع بيانات ثابتة فوق جافاسكريبت، بيكتشف أخطاء كتير وقت الكتابة.\n\n2️⃣ <b>إدارة الحالة:</b> Redux وZustand وContext API لمشاركة البيانات بين مكونات كتيرة.\n\n3️⃣ <b>Backend بـ Node.js:</b> Express إطار عمل خفيف لبناء APIs.\n\n4️⃣ <b>قواعد البيانات:</b> MongoDB (NoSQL) وPostgreSQL (علائقية).\n\n5️⃣ <b>اختبار الكود:</b> Jest وTesting Library لاختبار الواجهة والمنطق.\n\n6️⃣ <b>أدوات البناء:</b> Vite بديل حديث وأسرع لـ Webpack.\n\n7️⃣ <b>الأداء:</b> تقليل حجم الـ Bundle عن طريق Code Splitting وLazy Loading.\n\n8️⃣ <b>Next.js:</b> إطار عمل فوق React بيضيف Server-Side Rendering وRouting جاهز.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل تطبيق Full-Stack كامل (React + Express + قاعدة بيانات).\n\n📚 <b>مصادر مجانية:</b> TypeScript Handbook، Next.js docs، Fireship على يوتيوب"
+  },
+  "webdev": {
+    "beginner": "1️⃣ <b>HTML:</b> لغة الترميز اللي بتبني هيكل الصفحة، زي <code>&lt;h1&gt;</code>, <code>&lt;p&gt;</code>, <code>&lt;div&gt;</code>, <code>&lt;img&gt;</code>.\n\n2️⃣ <b>CSS:</b> بتتحكم في الشكل — الألوان والخطوط والمسافات، والـ Selectors بتحدد أي عنصر هتنسقه.\n\n3️⃣ <b>Box Model وFlexbox:</b> كل عنصر HTML صندوق له content وpadding وborder وmargin. Flexbox بيسهّل الترتيب.\n\n4️⃣ <b>CSS Grid:</b> نظام تخطيط ثنائي الأبعاد (صفوف وأعمدة)، مثالي للتصميمات المعقدة.\n\n5️⃣ <b>التصميم المتجاوب:</b> <code>@media (max-width: 768px) {}</code> لتغيير التصميم حسب حجم الشاشة.\n\n6️⃣ <b>Forms:</b> <code>&lt;input&gt;</code>, <code>&lt;select&gt;</code>, <code>&lt;textarea&gt;</code> لجمع بيانات المستخدم.\n\n7️⃣ <b>النشر:</b> GitHub Pages بتخليك تنشر موقع بسيط مجاناً في دقايق.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل صفحة Portfolio شخصية متجاوبة.\n\n📚 <b>مصادر مجانية:</b> MDN Web Docs، CSS Tricks، freeCodeCamp Responsive Web Design",
+    "intermediate": "1️⃣ <b>Sass/SCSS:</b> امتداد لـ CSS بيضيف متغيرات وnesting وfunctions.\n\n2️⃣ <b>Tailwind CSS:</b> framework بيدّيك classes جاهزة تكتبها في الـ HTML مباشرة.\n\n3️⃣ <b>JavaScript للتفاعل:</b> إظهار/إخفاء عناصر، Validation، Slideshows.\n\n4️⃣ <b>إمكانية الوصول (a11y):</b> استخدام <code>alt</code> للصور وترتيب صحيح للعناوين.\n\n5️⃣ <b>SEO الأساسي:</b> عناوين وصفية وmeta description وهيكل HTML منظم.\n\n6️⃣ <b>أدوات البناء:</b> Vite بيدّيك Hot Reload فوري وأداء عالي وقت النشر.\n\n7️⃣ <b>الاستضافة الحديثة:</b> Netlify وVercel بينشروا موقعك مباشرة من GitHub.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل Landing Page كامل لمنتج وهمي وانشره على Vercel.\n\n📚 <b>مصادر مجانية:</b> Tailwind CSS docs، web.dev، Frontend Mentor",
+    "advanced": "1️⃣ <b>أطر عمل Frontend:</b> React الأشهر، Vue أبسط، Svelte بيطلع أداء أعلى.\n\n2️⃣ <b>Server-Side Rendering:</b> Next.js وNuxt.js بيرندروا الصفحة على السيرفر الأول.\n\n3️⃣ <b>الأداء:</b> Lighthouse من جوجل، وCore Web Vitals مقاييس ترتيب البحث.\n\n4️⃣ <b>PWA:</b> تطبيقات ويب تتثبت على الموبايل وتشتغل بدون إنترنت.\n\n5️⃣ <b>WebSockets:</b> اتصال مستمر بين المتصفح والسيرفر لتطبيقات الشات اللحظي.\n\n6️⃣ <b>CI/CD للـ Frontend:</b> GitHub Actions لاختبار وبناء تلقائي قبل كل نشر.\n\n7️⃣ <b>اختبار Frontend:</b> Cypress وPlaywright لمحاكاة تفاعل المستخدم الحقيقي.\n\n🎯 <b>مشروع تطبيقي:</b> اعمل تطبيق شات لحظي، أو انشر تطبيق Next.js كامل بـ SSR.\n\n📚 <b>مصادر مجانية:</b> web.dev، Next.js docs، Kevin Powell على يوتيوب"
+  },
+  "sql": {
+    "beginner": "1️⃣ <b>قواعد البيانات العلائقية:</b> البيانات مخزنة في جداول، كل جدول له أعمدة وصفوف.\n\n2️⃣ <b>SELECT وWHERE:</b> <code>SELECT name FROM users WHERE age &gt; 18;</code> أساس أي استعلام.\n\n3️⃣ <b>ORDER BY وLIMIT:</b> لترتيب النتائج وتحديد عددها.\n\n4️⃣ <b>INSERT وUPDATE وDELETE:</b> لإضافة وتعديل ومسح البيانات — احذر تستخدمهم بدون WHERE.\n\n5️⃣ <b>أنواع البيانات:</b> <code>INT</code>, <code>VARCHAR</code>, <code>DATE</code>, <code>BOOLEAN</code>.\n\n6️⃣ <b>المفتاح الأساسي:</b> <code>PRIMARY KEY</code> عمود بيميز كل صف بشكل فريد.\n\n🎯 <b>مشروع تطبيقي:</b> صمم قاعدة بيانات بسيطة لمكتبة كتب.\n\n📚 <b>مصادر مجانية:</b> SQLBolt، W3Schools SQL، Mode SQL Tutorial",
+    "intermediate": "1️⃣ <b>JOIN:</b> بتربط بيانات من جدولين، <code>INNER JOIN</code> للمتطابق، و<code>LEFT JOIN</code> لكل صفوف الجدول الأول.\n\n2️⃣ <b>GROUP BY وHAVING:</b> لتجميع الصفوف وفلترة النتائج المجمّعة.\n\n3️⃣ <b>Subqueries:</b> استعلام جوه استعلام تاني.\n\n4️⃣ <b>المفاتيح الأجنبية:</b> <code>FOREIGN KEY</code> بتربط جدول بجدول تاني وتحافظ على تناسق البيانات.\n\n5️⃣ <b>Indexes:</b> بتسرّع البحث في عمود معين لكن بتبطّئ الكتابة شوية.\n\n6️⃣ <b>Normalization:</b> تقسيم البيانات لجداول متعددة لتقليل التكرار.\n\n7️⃣ <b>SQL من بايثون:</b> SQLAlchemy بتخليك تتعامل مع الجداول ككائنات بايثون.\n\n🎯 <b>مشروع تطبيقي:</b> صمم قاعدة بيانات لنظام إدارة عيادة.\n\n📚 <b>مصادر مجانية:</b> Mode SQL Tutorial، PostgreSQL Tutorial، freeCodeCamp SQL",
+    "advanced": "1️⃣ <b>Query Optimization:</b> <code>EXPLAIN ANALYZE</code> بيوريك خطة تنفيذ الاستعلام.\n\n2️⃣ <b>Transactions وACID:</b> بتضمن إن مجموعة عمليات تتنفذ كلها أو ولا واحدة منها.\n\n3️⃣ <b>Stored Procedures وTriggers:</b> كود SQL يتنفذ تلقائياً عند حدث معين.\n\n4️⃣ <b>Window Functions:</b> زي <code>ROW_NUMBER()</code> و<code>RANK()</code> لحسابات عبر مجموعة صفوف.\n\n5️⃣ <b>Replication وBackup:</b> لحماية البيانات وتوزيع الحمل.\n\n6️⃣ <b>NoSQL مقابل SQL:</b> SQL للبيانات المترابطة، وNoSQL للبيانات المرنة سريعة الكتابة.\n\n7️⃣ <b>Redis للـ Caching:</b> بيخزن نتائج الاستعلامات المتكررة في الذاكرة.\n\n🎯 <b>مشروع تطبيقي:</b> صمم نظام قاعدة بيانات لمتجر إلكتروني مع Caching بـ Redis.\n\n📚 <b>مصادر مجانية:</b> PostgreSQL docs، Use The Index Luke، Redis docs"
+  },
+  "dsa": {
+    "beginner": "1️⃣ <b>المصفوفات والقوائم المرتبطة:</b> المصفوفة سريعة في الوصول العشوائي، والقائمة المرتبطة سريعة في الإضافة من البداية.\n\n2️⃣ <b>Stacks وQueues:</b> الـ Stack بمبدأ LIFO، والـ Queue بمبدأ FIFO.\n\n3️⃣ <b>Big O:</b> قياس كفاءة الخوارزمية. <code>O(1)</code> سريع ثابت، <code>O(n)</code> خطي، <code>O(n²)</code> بطيء مع البيانات الكبيرة.\n\n4️⃣ <b>خوارزميات البحث:</b> Linear Search <code>O(n)</code>، وBinary Search <code>O(log n)</code> للبيانات المرتبة.\n\n5️⃣ <b>خوارزميات الترتيب الأساسية:</b> Bubble وSelection Sort سهلين لكن بطيئين <code>O(n²)</code>.\n\n🎯 <b>تدريب:</b> حل 20 مسألة سهلة على LeetCode أو HackerRank.\n\n📚 <b>مصادر مجانية:</b> freeCodeCamp DSA، visualgo.net، NeetCode على يوتيوب",
+    "intermediate": "1️⃣ <b>الأشجار:</b> Binary Search Tree بيخلي البحث سريع <code>O(log n)</code>.\n\n2️⃣ <b>الرسوم البيانية:</b> BFS بيستكشف طبقة طبقة، وDFS بيستكشف عمق مسار كامل.\n\n3️⃣ <b>Hash Tables:</b> بتوصل للقيمة في <code>O(1)</code> تقريباً — أساس الـ dict في بايثون.\n\n4️⃣ <b>خوارزميات ترتيب متقدمة:</b> Merge Sort وQuick Sort <code>O(n log n)</code>.\n\n5️⃣ <b>Recursion:</b> دالة بتنادي نفسها، لازم يكون ليها حالة توقف.\n\n6️⃣ <b>Dynamic Programming:</b> تخزين نتائج مسائل فرعية متكررة بدل حسابها من الأول.\n\n🎯 <b>تدريب:</b> حل 30 مسألة متوسطة، ركز على Trees وGraphs.\n\n📚 <b>مصادر مجانية:</b> NeetCode 150، Abdul Bari على يوتيوب، LeetCode",
+    "advanced": "1️⃣ <b>Dynamic Programming المتقدم:</b> مسائل متعددة الأبعاد زي Knapsack وLCS.\n\n2️⃣ <b>Greedy Algorithms:</b> أفضل قرار محلي في كل خطوة، أسرع من DP لكن مش دايماً أمثل.\n\n3️⃣ <b>خوارزميات Graph متقدمة:</b> Dijkstra لأقصر مسار، وUnion-Find للمجموعات المتصلة.\n\n4️⃣ <b>Tries وHeaps متقدمة:</b> Trie للبحث عن كلمات، وHeap لأصغر/أكبر عنصر بكفاءة.\n\n5️⃣ <b>Backtracking:</b> استكشاف كل الحلول والتراجع فوراً لو المسار مش هيوصل لحل.\n\n6️⃣ <b>تحليل التعقيد بعمق:</b> الفرق بين Amortized وWorst Case.\n\n7️⃣ <b>التحضير للمقابلات:</b> System Design الأساسي بقى معيار في مقابلات الشركات الكبرى.\n\n🎯 <b>تدريب:</b> حل مسائل صعبة بانتظام، واعمل Mock Interviews.\n\n📚 <b>مصادر مجانية:</b> NeetCode، Grokking System Design، Pramp"
+  }
+};
+
+
+    // ═══════════════════════════════════════════════
+    // TOOLS SECTION
+    // ═══════════════════════════════════════════════
+    const TOOL_CATEGORIES = [
+      { id: 'data', label: '📦 البيانات', tools: [
+          {id:'json', label:'JSON'}, {id:'yaml', label:'YAML'}, {id:'hash', label:'Hash'}, {id:'csv', label:'CSV↔JSON'}, {id:'sql', label:'SQL'}
+      ]},
+      { id: 'crypto', label: '🔐 التشفير', tools: [
+          {id:'base64', label:'Base64'}, {id:'url', label:'URL'}
+      ]},
+      { id: 'network', label: '🌐 الشبكات', tools: [
+          {id:'jwt', label:'JWT'}, {id:'timestamp', label:'Timestamp'}, {id:'httpstatus', label:'HTTP Status'}, {id:'useragent', label:'User-Agent'}
+      ]},
+      { id: 'dev', label: '👨‍💻 أدوات المطور', tools: [
+          {id:'uuid', label:'UUID'}, {id:'password', label:'Password'}, {id:'color', label:'Color'}, {id:'qr', label:'QR Code'},
+          {id:'regex', label:'Regex'}, {id:'counter', label:'Code Counter'}, {id:'baseconv', label:'Base Conv'}, {id:'ascii', label:'ASCII'}, {id:'cron', label:'Cron'}
+      ]},
+      { id: 'text', label: '🧰 النصوص', tools: [
+          {id:'mdhtml', label:'MD→HTML'}, {id:'case', label:'Case'}, {id:'slug', label:'Slug'}, {id:'lorem', label:'Lorem'}, {id:'diff', label:'Diff'}
+      ]},
+      { id: 'reference', label: '📚 مرجع', tools: [
+          {id:'gitref', label:'Git'}, {id:'regexref', label:'Regex Ref'}, {id:'httpref', label:'HTTP'}, {id:'linuxref', label:'Linux'}
+      ]},
+    ];
+    let currentToolCategory = 'data';
+
+    function renderTools() {
+      return `
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-slate-900 sm:text-3xl">أدوات المطور</h1>
+          <p class="mt-1 text-sm text-slate-500 sm:text-base">29 أداة برمجية متكاملة لتسريع عملك اليومي</p>
+        </div>
+        <div id="category-tabs" class="flex w-full flex-wrap gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1.5 mb-4"></div>
+        <div id="tool-tabs" class="flex w-full flex-wrap gap-1 overflow-x-auto rounded-xl bg-slate-50 border border-slate-200 p-1.5 mb-4"></div>
+        <div id="tool-content" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"></div>
+      `;
+    }
+
+    function openToolCategory(catId) {
+      currentToolCategory = catId;
+      const catTabs = document.getElementById('category-tabs');
+      catTabs.innerHTML = TOOL_CATEGORIES.map(c => `
+        <button onclick="openToolCategory('${c.id}')" class="flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${c.id===catId ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}">${c.label}</button>
+      `).join('');
+      const cat = TOOL_CATEGORIES.find(c => c.id === catId);
+      const toolTabs = document.getElementById('tool-tabs');
+      toolTabs.innerHTML = cat.tools.map((t, idx) => `
+        <button onclick="switchTool('${t.id}')" id="btn-${t.id}" class="tool-btn flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-xs sm:text-sm font-medium ${idx===0 ? 'bg-teal-600 text-white' : 'text-slate-600 hover:bg-slate-200/50'}">${t.label}</button>
+      `).join('');
+      switchTool(cat.tools[0].id);
+    }
+
+    function switchTool(tool) {
+      document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.classList.remove('bg-teal-600', 'text-white');
+        btn.classList.add('text-slate-600', 'hover:bg-slate-200/50');
+      });
+      const activeBtn = document.getElementById(`btn-${tool}`);
+      if (activeBtn) { activeBtn.classList.add('bg-teal-600', 'text-white'); activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-200/50'); }
+
+      const content = document.getElementById('tool-content');
+      content.innerHTML = TOOL_RENDERERS[tool] ? TOOL_RENDERERS[tool]() : '<p class="text-slate-500">قريباً...</p>';
+      if (TOOL_INIT[tool]) TOOL_INIT[tool]();
+    }
+
+    function codeOutBox(id, extra='') {
+      return `<div id="${id}" class="mt-4 ${extra}"></div>`;
+    }
+    function outputWithCopy(text, filename) {
+      const escaped = text.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+      return `
+        <div class="relative">
+          <button onclick="copyToClipboard(\`${escaped}\`)" class="absolute left-2 top-2 rounded-lg bg-slate-700 px-2 py-1 text-xs text-white hover:bg-slate-600">نسخ</button>
+          <pre class="code-out overflow-auto rounded-xl bg-slate-900 p-4 pt-10 font-mono text-sm text-teal-300 max-h-96">${text.replace(/</g,'&lt;')}</pre>
+        </div>`;
+    }
+    function errorBox(msg) {
+      return `<div class="rounded-lg bg-rose-50 p-3 text-sm text-rose-600">${msg}</div>`;
+    }
+
+    const TOOL_RENDERERS = {};
+    const TOOL_INIT = {};
+
+    // --- JSON Formatter ---
+    TOOL_RENDERERS.json = () => `
+      <h3 class="mb-1 text-lg font-bold">مُنسّق JSON</h3>
+      <p class="mb-4 text-sm text-slate-500">أدخل JSON لتنسيقه والتحقق من صحته</p>
+      <textarea id="json-input" rows="6" class="w-full resize-y rounded-xl border border-slate-200 p-3 font-mono text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder='{"name":"ProDev"}'>{"name":"ProDev Hub","tools":29}</textarea>
+      <div class="mt-3 flex gap-2">
+        <button onclick="formatJson()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">تنسيق</button>
+        <button onclick="minifyJson()" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">ضغط</button>
+      </div>
+      ${codeOutBox('json-output')}`;
+    function formatJson() {
+      try {
+        const parsed = JSON.parse(document.getElementById('json-input').value);
+        document.getElementById('json-output').innerHTML = outputWithCopy(JSON.stringify(parsed, null, 2));
+      } catch(e) { document.getElementById('json-output').innerHTML = errorBox('خطأ: JSON غير صالح — ' + e.message); }
+    }
+    function minifyJson() {
+      try {
+        const parsed = JSON.parse(document.getElementById('json-input').value);
+        document.getElementById('json-output').innerHTML = outputWithCopy(JSON.stringify(parsed));
+      } catch(e) { document.getElementById('json-output').innerHTML = errorBox('خطأ: JSON غير صالح'); }
+    }
+
+    // --- YAML ---
+    TOOL_RENDERERS.yaml = () => `
+      <h3 class="mb-1 text-lg font-bold">JSON ↔ YAML</h3>
+      <p class="mb-4 text-sm text-slate-500">حوّل بين صيغتي JSON وYAML</p>
+      <textarea id="yaml-input" rows="6" class="w-full resize-y rounded-xl border border-slate-200 p-3 font-mono text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="الصق JSON أو YAML هنا..."></textarea>
+      <div class="mt-3 flex gap-2">
+        <button onclick="jsonToYaml()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">JSON → YAML</button>
+        <button onclick="yamlToJson()" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">YAML → JSON</button>
+      </div>
+      ${codeOutBox('yaml-output')}`;
+    function jsonToYaml() {
+      try { document.getElementById('yaml-output').innerHTML = outputWithCopy(jsyaml.dump(JSON.parse(document.getElementById('yaml-input').value))); }
+      catch(e) { document.getElementById('yaml-output').innerHTML = errorBox('خطأ: ' + e.message); }
+    }
+    function yamlToJson() {
+      try { document.getElementById('yaml-output').innerHTML = outputWithCopy(JSON.stringify(jsyaml.load(document.getElementById('yaml-input').value), null, 2)); }
+      catch(e) { document.getElementById('yaml-output').innerHTML = errorBox('خطأ: ' + e.message); }
+    }
+
+    // --- Hash ---
+    TOOL_RENDERERS.hash = () => `
+      <h3 class="mb-1 text-lg font-bold">مولّد Hash</h3>
+      <p class="mb-4 text-sm text-slate-500">أنشئ MD5 أو SHA-1 أو SHA-256 أو SHA-512 لأي نص</p>
+      <textarea id="hash-input" rows="3" class="w-full resize-y rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="أدخل النص..."></textarea>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button onclick="computeHash('MD5')" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">MD5</button>
+        <button onclick="computeHash('SHA1')" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">SHA-1</button>
+        <button onclick="computeHash('SHA256')" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">SHA-256</button>
+        <button onclick="computeHash('SHA512')" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">SHA-512</button>
+      </div>
+      ${codeOutBox('hash-output')}`;
+    function computeHash(algo) {
+      const input = document.getElementById('hash-input').value;
+      const fn = { MD5: CryptoJS.MD5, SHA1: CryptoJS.SHA1, SHA256: CryptoJS.SHA256, SHA512: CryptoJS.SHA512 }[algo];
+      document.getElementById('hash-output').innerHTML = outputWithCopy(fn(input).toString());
+    }
+
+    // --- CSV <-> JSON ---
+    TOOL_RENDERERS.csv = () => `
+      <h3 class="mb-1 text-lg font-bold">CSV ↔ JSON</h3>
+      <p class="mb-4 text-sm text-slate-500">CSV → JSON: أول سطر رؤوس أعمدة. JSON → CSV: مصفوفة كائنات.</p>
+      <textarea id="csv-input" rows="6" class="w-full resize-y rounded-xl border border-slate-200 p-3 font-mono text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="name,age&#10;Ahmed,25"></textarea>
+      <div class="mt-3 flex gap-2">
+        <button onclick="csvToJson()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">CSV → JSON</button>
+        <button onclick="jsonToCsv()" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">JSON → CSV</button>
+      </div>
+      ${codeOutBox('csv-output')}`;
+    function parseCSV(text) {
+      const lines = text.trim().split(/\r?\n/);
+      const headers = lines[0].split(',').map(h => h.trim());
+      return lines.slice(1).filter(l => l.trim() !== '').map(line => {
+        const cells = line.split(',');
+        const obj = {};
+        headers.forEach((h, idx) => obj[h] = (cells[idx] || '').trim());
+        return obj;
+      });
+    }
+    function toCSV(arr) {
+      if (!Array.isArray(arr) || arr.length === 0) throw new Error('يجب أن تكون البيانات مصفوفة غير فارغة');
+      const headers = Object.keys(arr[0]);
+      return headers.join(',') + '\n' + arr.map(o => headers.map(h => o[h]).join(',')).join('\n');
+    }
+    function csvToJson() {
+      try { document.getElementById('csv-output').innerHTML = outputWithCopy(JSON.stringify(parseCSV(document.getElementById('csv-input').value), null, 2)); }
+      catch(e) { document.getElementById('csv-output').innerHTML = errorBox('خطأ: ' + e.message); }
+    }
+    function jsonToCsv() {
+      try { document.getElementById('csv-output').innerHTML = outputWithCopy(toCSV(JSON.parse(document.getElementById('csv-input').value))); }
+      catch(e) { document.getElementById('csv-output').innerHTML = errorBox('خطأ: ' + e.message); }
+    }
+
+    // --- SQL Formatter ---
+    TOOL_RENDERERS.sql = () => `
+      <h3 class="mb-1 text-lg font-bold">SQL Formatter</h3>
+      <p class="mb-4 text-sm text-slate-500">نسّق استعلامات SQL لتصبح أسهل قراءة</p>
+      <textarea id="sql-input" rows="5" class="w-full resize-y rounded-xl border border-slate-200 p-3 font-mono text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="select * from users where id=1"></textarea>
+      <div class="mt-3"><button onclick="formatSQL()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">تنسيق</button></div>
+      ${codeOutBox('sql-output')}`;
+    function formatSQL() {
+      const keywords = ['SELECT','FROM','WHERE','LEFT JOIN','RIGHT JOIN','INNER JOIN','JOIN','GROUP BY','ORDER BY','HAVING','LIMIT','INSERT INTO','VALUES','UPDATE','SET','DELETE FROM','AND','OR'];
+      let formatted = document.getElementById('sql-input').value;
+      keywords.forEach(kw => { formatted = formatted.replace(new RegExp('\\b' + kw.replace(/ /g,'\\s+') + '\\b', 'gi'), '\n' + kw.toUpperCase()); });
+      document.getElementById('sql-output').innerHTML = outputWithCopy(formatted.trim());
+    }
+
+    // --- Base64 ---
+    TOOL_RENDERERS.base64 = () => `
+      <h3 class="mb-1 text-lg font-bold">مُشفّر Base64</h3>
+      <p class="mb-4 text-sm text-slate-500">شفّر أو فُك تشفير النصوص</p>
+      <textarea id="b64-input" rows="4" class="w-full resize-y rounded-xl border border-slate-200 p-3 font-mono text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="أدخل النص هنا...">مرحبا بك في ProDev Hub</textarea>
+      <div class="mt-3 flex gap-2">
+        <button onclick="encodeBase64()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">تشفير</button>
+        <button onclick="decodeBase64()" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">فك التشفير</button>
+      </div>
+      ${codeOutBox('b64-output')}`;
+    function encodeBase64() {
+      try { document.getElementById('b64-output').innerHTML = outputWithCopy(btoa(unescape(encodeURIComponent(document.getElementById('b64-input').value)))); }
+      catch(e) { document.getElementById('b64-output').innerHTML = errorBox('خطأ في التشفير'); }
+    }
+    function decodeBase64() {
+      try { document.getElementById('b64-output').innerHTML = outputWithCopy(decodeURIComponent(escape(atob(document.getElementById('b64-input').value)))); }
+      catch(e) { document.getElementById('b64-output').innerHTML = errorBox('خطأ: النص غير مشفر بشكل صحيح'); }
+    }
+
+    // --- URL Encode/Decode ---
+    TOOL_RENDERERS.url = () => `
+      <h3 class="mb-1 text-lg font-bold">URL Encode/Decode</h3>
+      <p class="mb-4 text-sm text-slate-500">شفّر أو فُك تشفير نصوص الروابط</p>
+      <textarea id="url-input" rows="4" class="w-full resize-y rounded-xl border border-slate-200 p-3 font-mono text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="https://example.com?q=hello world"></textarea>
+      <div class="mt-3 flex gap-2">
+        <button onclick="encodeUrl()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">تشفير</button>
+        <button onclick="decodeUrl()" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">فك التشفير</button>
+      </div>
+      ${codeOutBox('url-output')}`;
+    function encodeUrl() { document.getElementById('url-output').innerHTML = outputWithCopy(encodeURIComponent(document.getElementById('url-input').value)); }
+    function decodeUrl() {
+      try { document.getElementById('url-output').innerHTML = outputWithCopy(decodeURIComponent(document.getElementById('url-input').value)); }
+      catch(e) { document.getElementById('url-output').innerHTML = errorBox('خطأ في فك التشفير'); }
+    }
+
+    // --- JWT Decoder ---
+    TOOL_RENDERERS.jwt = () => `
+      <h3 class="mb-1 text-lg font-bold">JWT Decoder</h3>
+      <p class="mb-4 text-sm text-slate-500">فُك ترميز الـ Header والـ Payload (بدون التحقق من التوقيع)</p>
+      <textarea id="jwt-input" rows="4" class="w-full resize-y rounded-xl border border-slate-200 p-3 font-mono text-xs code-out focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="eyJhbGciOi..."></textarea>
+      <div class="mt-3"><button onclick="decodeJwt()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">فك التوكن</button></div>
+      ${codeOutBox('jwt-output')}`;
+    function b64urlDecode(s) { s = s.replace(/-/g,'+').replace(/_/g,'/'); while (s.length % 4) s += '='; return decodeURIComponent(escape(atob(s))); }
+    function decodeJwt() {
+      try {
+        const parts = document.getElementById('jwt-input').value.trim().split('.');
+        if (parts.length !== 3) throw new Error('التوكن يجب أن يتكون من 3 أجزاء');
+        const header = JSON.stringify(JSON.parse(b64urlDecode(parts[0])), null, 2);
+        const payload = JSON.stringify(JSON.parse(b64urlDecode(parts[1])), null, 2);
+        document.getElementById('jwt-output').innerHTML = `<p class="text-xs font-bold text-slate-500 mb-1">Header:</p>` + outputWithCopy(header) + `<p class="text-xs font-bold text-slate-500 mb-1 mt-3">Payload:</p>` + outputWithCopy(payload);
+      } catch(e) { document.getElementById('jwt-output').innerHTML = errorBox('خطأ: ' + e.message); }
+    }
+
+    // --- Timestamp ---
+    TOOL_RENDERERS.timestamp = () => `
+      <h3 class="mb-1 text-lg font-bold">محول Timestamp</h3>
+      <p class="mb-4 text-sm text-slate-500">حوّل بين Unix Timestamp والتاريخ</p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <input id="ts-unix" type="text" placeholder="Unix Timestamp" class="w-full rounded-xl border border-slate-200 p-3 text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none">
+          <button onclick="unixToDate()" class="mt-2 w-full rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">→ تاريخ</button>
+        </div>
+        <div>
+          <input id="ts-date" type="datetime-local" class="w-full rounded-xl border border-slate-200 p-3 text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none">
+          <button onclick="dateToUnix()" class="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">→ Unix</button>
+        </div>
+      </div>
+      <button onclick="showNowTimestamp()" class="mt-3 text-xs text-teal-600 hover:underline">🕐 الوقت الحالي</button>
+      ${codeOutBox('ts-output')}`;
+    function unixToDate() {
+      const v = parseInt(document.getElementById('ts-unix').value);
+      if (isNaN(v)) { document.getElementById('ts-output').innerHTML = errorBox('أدخل رقم صالح'); return; }
+      document.getElementById('ts-output').innerHTML = outputWithCopy(new Date(v * 1000).toLocaleString('ar-EG', {timeZone:'UTC'}) + ' (UTC)');
+    }
+    function dateToUnix() {
+      const v = document.getElementById('ts-date').value;
+      if (!v) { document.getElementById('ts-output').innerHTML = errorBox('اختر تاريخ'); return; }
+      document.getElementById('ts-output').innerHTML = outputWithCopy(Math.floor(new Date(v).getTime() / 1000).toString());
+    }
+    function showNowTimestamp() { document.getElementById('ts-output').innerHTML = outputWithCopy(Math.floor(Date.now()/1000).toString()); }
+
+    // --- HTTP Status ---
+    const HTTP_STATUSES = { 100:"Continue",101:"Switching Protocols",200:"OK",201:"Created",202:"Accepted",204:"No Content",301:"Moved Permanently",302:"Found",304:"Not Modified",307:"Temporary Redirect",308:"Permanent Redirect",400:"Bad Request",401:"Unauthorized",403:"Forbidden",404:"Not Found",405:"Method Not Allowed",408:"Request Timeout",409:"Conflict",410:"Gone",422:"Unprocessable Entity",429:"Too Many Requests",500:"Internal Server Error",501:"Not Implemented",502:"Bad Gateway",503:"Service Unavailable",504:"Gateway Timeout" };
+    TOOL_RENDERERS.httpstatus = () => `
+      <h3 class="mb-1 text-lg font-bold">HTTP Status Lookup</h3>
+      <p class="mb-4 text-sm text-slate-500">ابحث عن معنى أي كود حالة HTTP</p>
+      <input id="hs-input" type="number" placeholder="مثال: 404" oninput="lookupHttpStatus()" class="w-full rounded-xl border border-slate-200 p-3 text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none">
+      ${codeOutBox('hs-output')}`;
+    function lookupHttpStatus() {
+      const code = parseInt(document.getElementById('hs-input').value);
+      const o = document.getElementById('hs-output');
+      if (!code) { o.innerHTML = ''; return; }
+      const phrase = HTTP_STATUSES[code];
+      if (!phrase) { o.innerHTML = errorBox('كود غير معروف'); return; }
+      const cat = Math.floor(code/100);
+      const names = {1:"ℹ️ إعلامي",2:"✅ نجاح",3:"↪️ إعادة توجيه",4:"⚠️ خطأ من العميل",5:"🔴 خطأ من السيرفر"};
+      o.innerHTML = `<div class="rounded-xl bg-slate-50 border border-slate-200 p-4"><p class="font-bold text-lg">HTTP ${code} — ${phrase}</p><p class="text-sm text-slate-500 mt-1">${names[cat]||''}</p></div>`;
+    }
+
+    // --- User-Agent Parser ---
+    TOOL_RENDERERS.useragent = () => `
+      <h3 class="mb-1 text-lg font-bold">User-Agent Parser</h3>
+      <p class="mb-4 text-sm text-slate-500">حلّل أي User-Agent لمعرفة المتصفح ونظام التشغيل</p>
+      <textarea id="ua-input" rows="3" class="w-full resize-y rounded-xl border border-slate-200 p-3 font-mono text-xs code-out focus:ring-2 focus:ring-teal-500 focus:outline-none"></textarea>
+      <div class="mt-3"><button onclick="parseUA()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">تحليل</button></div>
+      ${codeOutBox('ua-output')}`;
+    TOOL_INIT.useragent = () => { document.getElementById('ua-input').value = navigator.userAgent; parseUA(); };
+    function parseUA() {
+      const ua = document.getElementById('ua-input').value;
+      let browser = "غير معروف";
+      if (ua.includes("Edg/")) browser = "Microsoft Edge";
+      else if (ua.includes("OPR/") || ua.includes("Opera")) browser = "Opera";
+      else if (ua.includes("Firefox/")) browser = "Firefox";
+      else if (ua.includes("Chrome/") && ua.includes("Safari/")) browser = "Chrome";
+      else if (ua.includes("Safari/") && ua.includes("Version/")) browser = "Safari";
+      let os = "غير معروف";
+      if (ua.includes("Windows NT")) os = "Windows";
+      else if (ua.includes("Mac OS X")) os = "macOS";
+      else if (ua.includes("Android")) os = "Android";
+      else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
+      else if (ua.includes("Linux")) os = "Linux";
+      const mobile = /Mobile|Android|iPhone/.test(ua);
+      document.getElementById('ua-output').innerHTML = `<div class="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-1 text-sm">
+        <p><b>المتصفح:</b> ${browser}</p><p><b>نظام التشغيل:</b> ${os}</p><p><b>نوع الجهاز:</b> ${mobile ? '📱 موبايل' : '🖥️ كمبيوتر'}</p></div>`;
+    }
+
+
+    // --- UUID ---
+    TOOL_RENDERERS.uuid = () => `
+      <h3 class="mb-1 text-lg font-bold">مولّد UUID</h3>
+      <p class="mb-4 text-sm text-slate-500">أنشئ معرّف فريد (UUID v4)</p>
+      <button onclick="generateUuid()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">توليد UUID جديد</button>
+      ${codeOutBox('uuid-output')}`;
+    TOOL_INIT.uuid = () => generateUuid();
+    function generateUuid() {
+      const uuid = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+      document.getElementById('uuid-output').innerHTML = outputWithCopy(uuid);
+    }
+
+    // --- Password Generator ---
+    TOOL_RENDERERS.password = () => `
+      <h3 class="mb-1 text-lg font-bold">مُولّد كلمات المرور</h3>
+      <p class="mb-4 text-sm text-slate-500">أنشئ كلمات مرور قوية وآمنة</p>
+      <div class="flex items-center gap-4 mb-4">
+        <label class="text-sm font-medium">الطول:</label>
+        <input type="range" id="pass-length" min="6" max="32" value="16" class="w-1/2" oninput="document.getElementById('pass-val').textContent=this.value">
+        <span id="pass-val" class="font-bold text-teal-600">16</span>
+      </div>
+      <div class="flex flex-wrap gap-4 mb-4 text-sm">
+        <label class="flex items-center gap-2"><input type="checkbox" id="pass-upper" checked> أحرف كبيرة</label>
+        <label class="flex items-center gap-2"><input type="checkbox" id="pass-lower" checked> أحرف صغيرة</label>
+        <label class="flex items-center gap-2"><input type="checkbox" id="pass-num" checked> أرقام</label>
+        <label class="flex items-center gap-2"><input type="checkbox" id="pass-sym" checked> رموز</label>
+      </div>
+      <button onclick="generatePassword()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">توليد</button>
+      ${codeOutBox('pass-output')}`;
+    TOOL_INIT.password = () => generatePassword();
+    function generatePassword() {
+      const length = parseInt(document.getElementById('pass-length').value);
+      let chars = "";
+      if (document.getElementById('pass-upper').checked) chars += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      if (document.getElementById('pass-lower').checked) chars += "abcdefghijklmnopqrstuvwxyz";
+      if (document.getElementById('pass-num').checked) chars += "0123456789";
+      if (document.getElementById('pass-sym').checked) chars += "!@#$%^&*()_+~`|}{[]:;?><,./-=";
+      if (!chars) { document.getElementById('pass-output').innerHTML = errorBox('اختر نوع واحد على الأقل'); return; }
+      let password = "";
+      for (let i = 0; i < length; i++) password += chars.charAt(Math.floor(Math.random() * chars.length));
+      document.getElementById('pass-output').innerHTML = outputWithCopy(password);
+    }
+
+    // --- Color Converter ---
+    TOOL_RENDERERS.color = () => `
+      <h3 class="mb-1 text-lg font-bold">محول الألوان</h3>
+      <p class="mb-4 text-sm text-slate-500">حوّل بين HEX وRGB</p>
+      <div class="flex items-center gap-3 mb-4">
+        <input type="color" id="color-picker" value="#0d9488" oninput="document.getElementById('color-hex').value=this.value; convertColor();" class="h-12 w-16 rounded cursor-pointer">
+        <input type="text" id="color-hex" value="#0d9488" oninput="convertColor()" class="flex-1 rounded-xl border border-slate-200 p-3 text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none">
+      </div>
+      ${codeOutBox('color-output')}`;
+    TOOL_INIT.color = () => convertColor();
+    function convertColor() {
+      const hex = document.getElementById('color-hex').value.replace('#','');
+      if (!/^[0-9A-Fa-f]{6}$/.test(hex)) { document.getElementById('color-output').innerHTML = errorBox('كود HEX غير صالح'); return; }
+      const r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16);
+      document.getElementById('color-picker').value = '#' + hex;
+      document.getElementById('color-output').innerHTML = `
+        <div class="rounded-xl overflow-hidden border border-slate-200">
+          <div style="background-color:#${hex}; height:70px;"></div>
+          <div class="p-4 text-sm space-y-1 code-out"><p><b>HEX:</b> #${hex.toUpperCase()}</p><p><b>RGB:</b> rgb(${r}, ${g}, ${b})</p></div>
+        </div>`;
+    }
+
+    // --- QR Code ---
+    TOOL_RENDERERS.qr = () => `
+      <h3 class="mb-1 text-lg font-bold">مُولّد رمز QR</h3>
+      <p class="mb-4 text-sm text-slate-500">حوّل أي نص أو رابط إلى رمز QR</p>
+      <input type="text" id="qr-input" class="w-full rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="أدخل رابط أو نص..." value="https://alisaad706-pixel.github.io/prodev-app/">
+      <button onclick="generateQR()" class="mt-3 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">إنشاء QR</button>
+      <div id="qr-output" class="mt-6 flex justify-center"></div>`;
+    TOOL_INIT.qr = () => generateQR();
+    function generateQR() {
+      const text = document.getElementById('qr-input').value;
+      if (!text) return;
+      document.getElementById('qr-output').innerHTML = '<div id="qr-code"></div>';
+      new QRCode(document.getElementById('qr-code'), { text, width: 200, height: 200, colorDark: "#0f766e", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H });
+    }
+
+    // --- Regex Tester ---
+    TOOL_RENDERERS.regex = () => `
+      <h3 class="mb-1 text-lg font-bold">Regex Tester</h3>
+      <p class="mb-4 text-sm text-slate-500">اختبر تعابير Regex على أي نص</p>
+      <input id="regex-pattern" type="text" placeholder="النمط، مثال: \\d+" class="w-full rounded-xl border border-slate-200 p-3 text-sm code-out mb-3 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+      <div class="flex gap-4 mb-3 text-sm">
+        <label class="flex items-center gap-2"><input type="checkbox" id="regex-g" checked> g</label>
+        <label class="flex items-center gap-2"><input type="checkbox" id="regex-i"> i</label>
+        <label class="flex items-center gap-2"><input type="checkbox" id="regex-m"> m</label>
+      </div>
+      <textarea id="regex-test-str" rows="3" class="w-full resize-y rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="النص المراد اختباره..."></textarea>
+      <div class="mt-3"><button onclick="testRegex()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">اختبار</button></div>
+      ${codeOutBox('regex-output')}`;
+    function testRegex() {
+      const pattern = document.getElementById('regex-pattern').value;
+      const str = document.getElementById('regex-test-str').value;
+      let flags = '';
+      if (document.getElementById('regex-g').checked) flags += 'g';
+      if (document.getElementById('regex-i').checked) flags += 'i';
+      if (document.getElementById('regex-m').checked) flags += 'm';
+      try {
+        const re = new RegExp(pattern, flags.includes('g') ? flags : flags + 'g');
+        const matches = [...str.matchAll(re)];
+        if (!matches.length) { document.getElementById('regex-output').innerHTML = errorBox('لا يوجد أي تطابق'); return; }
+        const list = matches.slice(0,30).map((m,i) => `${i+1}. "${m[0]}" (index ${m.index})`).join('\n');
+        document.getElementById('regex-output').innerHTML = outputWithCopy(`عدد التطابقات: ${matches.length}\n\n` + list);
+      } catch(e) { document.getElementById('regex-output').innerHTML = errorBox('نمط غير صالح: ' + e.message); }
+    }
+
+    // --- Code Counter ---
+    TOOL_RENDERERS.counter = () => `
+      <h3 class="mb-1 text-lg font-bold">عداد أسطر الكود</h3>
+      <p class="mb-4 text-sm text-slate-500">إحصائيات سريعة عن أي كود تلصقه</p>
+      <textarea id="counter-input" rows="6" oninput="countCode()" class="w-full resize-y rounded-xl border border-slate-200 p-3 font-mono text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="الصق الكود هنا..."></textarea>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-center"><p class="text-xl font-bold text-teal-600" id="counter-total">0</p><p class="text-xs text-slate-500">إجمالي الأسطر</p></div>
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-center"><p class="text-xl font-bold text-teal-600" id="counter-nonempty">0</p><p class="text-xs text-slate-500">غير فارغة</p></div>
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-center"><p class="text-xl font-bold text-teal-600" id="counter-comments">0</p><p class="text-xs text-slate-500">تعليقات</p></div>
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-center"><p class="text-xl font-bold text-teal-600" id="counter-chars">0</p><p class="text-xs text-slate-500">حرف</p></div>
+      </div>`;
+    function countCode() {
+      const text = document.getElementById('counter-input').value;
+      const lines = text.split('\n');
+      document.getElementById('counter-total').innerText = lines.length;
+      document.getElementById('counter-nonempty').innerText = lines.filter(l => l.trim() !== '').length;
+      document.getElementById('counter-comments').innerText = lines.filter(l => { const t = l.trim(); return t.startsWith('//') || t.startsWith('#') || t.startsWith('/*') || t.startsWith('*'); }).length;
+      document.getElementById('counter-chars').innerText = text.length;
+    }
+
+    // --- Base Converter ---
+    TOOL_RENDERERS.baseconv = () => `
+      <h3 class="mb-1 text-lg font-bold">محول الأساس العددي</h3>
+      <p class="mb-4 text-sm text-slate-500">تحويل بين عشري وثنائي وثماني وسادس عشر</p>
+      <div class="flex gap-3 mb-4">
+        <input id="base-input" type="text" oninput="convertBase()" placeholder="أدخل رقماً..." class="flex-1 rounded-xl border border-slate-200 p-3 text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none">
+        <select id="base-from" onchange="convertBase()" class="rounded-xl border border-slate-200 p-3 text-sm">
+          <option value="10">Decimal</option><option value="2">Binary</option><option value="8">Octal</option><option value="16">Hex</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3"><p class="text-xs text-slate-500">Decimal</p><p class="font-mono font-bold code-out" id="base-dec">--</p></div>
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3"><p class="text-xs text-slate-500">Binary</p><p class="font-mono font-bold code-out" id="base-bin">--</p></div>
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3"><p class="text-xs text-slate-500">Octal</p><p class="font-mono font-bold code-out" id="base-oct">--</p></div>
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3"><p class="text-xs text-slate-500">Hex</p><p class="font-mono font-bold code-out" id="base-hex">--</p></div>
+      </div>`;
+    function convertBase() {
+      const val = document.getElementById('base-input').value.trim();
+      const from = parseInt(document.getElementById('base-from').value);
+      const cells = ['base-dec','base-bin','base-oct','base-hex'].map(id => document.getElementById(id));
+      if (!val) { cells.forEach(c => c.innerText = '--'); return; }
+      const num = parseInt(val, from);
+      if (isNaN(num)) { cells.forEach(c => c.innerText = '❌'); return; }
+      cells[0].innerText = num.toString(10); cells[1].innerText = num.toString(2); cells[2].innerText = num.toString(8); cells[3].innerText = num.toString(16).toUpperCase();
+    }
+
+    // --- ASCII Table ---
+    TOOL_RENDERERS.ascii = () => `
+      <h3 class="mb-1 text-lg font-bold">بحث جدول ASCII</h3>
+      <p class="mb-4 text-sm text-slate-500">أدخل حرف أو كود عشري</p>
+      <input id="ascii-input" type="text" oninput="lookupAscii()" class="w-full rounded-xl border border-slate-200 p-3 text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="A أو 65">
+      <div class="grid grid-cols-2 gap-3 mt-4">
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3"><p class="text-xs text-slate-500">Character</p><p class="font-mono font-bold code-out" id="ascii-char">--</p></div>
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3"><p class="text-xs text-slate-500">Decimal</p><p class="font-mono font-bold code-out" id="ascii-dec">--</p></div>
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3"><p class="text-xs text-slate-500">Hex</p><p class="font-mono font-bold code-out" id="ascii-hex">--</p></div>
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3"><p class="text-xs text-slate-500">Binary</p><p class="font-mono font-bold code-out" id="ascii-bin">--</p></div>
+      </div>`;
+    function lookupAscii() {
+      const val = document.getElementById('ascii-input').value.trim();
+      const cells = ['ascii-char','ascii-dec','ascii-hex','ascii-bin'].map(id => document.getElementById(id));
+      if (!val) { cells.forEach(c => c.innerText = '--'); return; }
+      let code, ch;
+      if (/^\d+$/.test(val)) { code = parseInt(val); ch = String.fromCharCode(code); } else { ch = val[0]; code = ch.charCodeAt(0); }
+      cells[0].innerText = ch; cells[1].innerText = code; cells[2].innerText = '0x'+code.toString(16).toUpperCase(); cells[3].innerText = code.toString(2);
+    }
+
+    // --- Cron Explainer ---
+    TOOL_RENDERERS.cron = () => `
+      <h3 class="mb-1 text-lg font-bold">شرح تعبير Cron</h3>
+      <p class="mb-4 text-sm text-slate-500">أدخل تعبير Cron (5 حقول)</p>
+      <input id="cron-input" type="text" oninput="explainCron()" placeholder="*/15 9-17 * * 1-5" class="w-full rounded-xl border border-slate-200 p-3 text-sm code-out text-center focus:ring-2 focus:ring-teal-500 focus:outline-none">
+      ${codeOutBox('cron-output')}`;
+    function explainField(v) {
+      if (v === '*') return 'كل قيمة';
+      if (v.startsWith('*/')) return `كل ${v.slice(2)}`;
+      if (v.includes('-') && !v.includes(',')) { const [a,b] = v.split('-'); return `من ${a} إلى ${b}`; }
+      if (v.includes(',')) return `القيم: ${v}`;
+      return v;
+    }
+    function explainCron() {
+      const fields = document.getElementById('cron-input').value.trim().split(/\s+/).filter(Boolean);
+      const o = document.getElementById('cron-output');
+      if (fields.length !== 5) { o.innerHTML = ''; return; }
+      const [min, hour, day, month, weekday] = fields;
+      o.innerHTML = `<div class="rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm space-y-1">
+        <p><b>الدقيقة:</b> ${explainField(min)}</p><p><b>الساعة:</b> ${explainField(hour)}</p><p><b>يوم الشهر:</b> ${explainField(day)}</p>
+        <p><b>الشهر:</b> ${explainField(month)}</p><p><b>يوم الأسبوع:</b> ${explainField(weekday)} (0=الأحد)</p></div>`;
+    }
+
+
+    // --- Markdown -> HTML ---
+    TOOL_RENDERERS.mdhtml = () => `
+      <h3 class="mb-1 text-lg font-bold">Markdown → HTML</h3>
+      <p class="mb-4 text-sm text-slate-500">حوّل نص Markdown إلى HTML</p>
+      <textarea id="md-input" rows="6" class="w-full resize-y rounded-xl border border-slate-200 p-3 font-mono text-sm code-out focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="# عنوان&#10;**نص عريض** و*مائل*"></textarea>
+      <div class="mt-3"><button onclick="convertMdHtml()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">تحويل</button></div>
+      ${codeOutBox('md-output')}`;
+    function mdToHtml(md) {
+      const lines = md.split('\n'); const out = []; let inCode = false;
+      for (let line of lines) {
+        if (line.trim().startsWith('```')) { inCode = !inCode; out.push(inCode ? '<pre><code>' : '</code></pre>'); continue; }
+        if (inCode) { out.push(line); continue; }
+        const h = line.match(/^(#{1,6})\s+(.*)$/);
+        if (h) { out.push(`<h${h[1].length}>${h[2]}</h${h[1].length}>`); continue; }
+        let p = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/`(.+?)`/g, '<code>$1</code>').replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
+        if (/^\s*[-*]\s+/.test(p)) out.push(`<li>${p.replace(/^\s*[-*]\s+/, '')}</li>`);
+        else if (p.trim() === '') out.push('');
+        else out.push(`<p>${p}</p>`);
+      }
+      return out.join('\n');
+    }
+    function convertMdHtml() { document.getElementById('md-output').innerHTML = outputWithCopy(mdToHtml(document.getElementById('md-input').value)); }
+
+    // --- Case Converter ---
+    TOOL_RENDERERS.case = () => `
+      <h3 class="mb-1 text-lg font-bold">Case Converter</h3>
+      <p class="mb-4 text-sm text-slate-500">حوّل النص لكل صيغ الحالة الشائعة دفعة واحدة</p>
+      <textarea id="case-input" rows="3" oninput="convertCase()" class="w-full resize-y rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="Hello World Example"></textarea>
+      ${codeOutBox('case-output')}`;
+    function convertCase() {
+      const text = document.getElementById('case-input').value.trim();
+      const o = document.getElementById('case-output');
+      if (!text) { o.innerHTML = ''; return; }
+      const words = text.split(/[\s_-]+/).filter(Boolean);
+      const upper = text.toUpperCase(), lower = text.toLowerCase();
+      const title = words.map(w => w[0].toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+      const camel = words.length ? words[0].toLowerCase() + words.slice(1).map(w=>w[0].toUpperCase()+w.slice(1).toLowerCase()).join('') : '';
+      const pascal = words.map(w=>w[0].toUpperCase()+w.slice(1).toLowerCase()).join('');
+      const snake = words.map(w=>w.toLowerCase()).join('_');
+      const kebab = words.map(w=>w.toLowerCase()).join('-');
+      o.innerHTML = outputWithCopy(`UPPERCASE: ${upper}\nlowercase: ${lower}\nTitle Case: ${title}\ncamelCase: ${camel}\nPascalCase: ${pascal}\nsnake_case: ${snake}\nkebab-case: ${kebab}`);
+    }
+
+    // --- Slug Generator ---
+    TOOL_RENDERERS.slug = () => `
+      <h3 class="mb-1 text-lg font-bold">Slug Generator</h3>
+      <p class="mb-4 text-sm text-slate-500">حوّل عنواناً إلى slug مناسب للروابط</p>
+      <input id="slug-input" type="text" oninput="generateSlug()" class="w-full rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="عنوان المقال هنا">
+      ${codeOutBox('slug-output')}`;
+    function generateSlug() {
+      const text = document.getElementById('slug-input').value.trim();
+      const o = document.getElementById('slug-output');
+      if (!text) { o.innerHTML = ''; return; }
+      let slug = text.toLowerCase().replace(/[^\w\s\u0600-\u06FF-]/g,'').replace(/[\s_]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+      o.innerHTML = outputWithCopy(slug);
+    }
+
+    // --- Lorem Ipsum ---
+    const LOREM_WORDS = "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat".split(' ');
+    TOOL_RENDERERS.lorem = () => `
+      <h3 class="mb-1 text-lg font-bold">Lorem Ipsum Generator</h3>
+      <p class="mb-4 text-sm text-slate-500">نص حشو جاهز لتصاميمك</p>
+      <div class="flex items-center gap-4 mb-4">
+        <label class="text-sm font-medium">عدد الكلمات:</label>
+        <input type="range" id="lorem-len" min="10" max="300" value="50" oninput="document.getElementById('lorem-val').textContent=this.value; generateLorem();">
+        <span id="lorem-val" class="font-bold text-teal-600">50</span>
+      </div>
+      ${codeOutBox('lorem-output')}`;
+    TOOL_INIT.lorem = () => generateLorem();
+    function generateLorem() {
+      const count = parseInt(document.getElementById('lorem-len').value);
+      let words = []; while (words.length < count) words = words.concat(LOREM_WORDS);
+      words = words.slice(0, count);
+      const text = words.join(' ');
+      document.getElementById('lorem-output').innerHTML = outputWithCopy(text.charAt(0).toUpperCase()+text.slice(1)+'.');
+    }
+
+    // --- Diff Checker ---
+    TOOL_RENDERERS.diff = () => `
+      <h3 class="mb-1 text-lg font-bold">Diff Checker</h3>
+      <p class="mb-4 text-sm text-slate-500">قارن بين نصين واعرف الفروقات</p>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <textarea id="diff-a" rows="6" class="w-full resize-y rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="النص الأول..."></textarea>
+        <textarea id="diff-b" rows="6" class="w-full resize-y rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" placeholder="النص الثاني..."></textarea>
+      </div>
+      <div class="mt-3"><button onclick="compareDiff()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">قارن</button></div>
+      <div id="diff-output" class="mt-4"></div>`;
+    function computeDiff(a, b) {
+      const A = a.split('\n'), B = b.split('\n'), n = A.length, m = B.length;
+      const dp = Array.from({length:n+1}, () => new Array(m+1).fill(0));
+      for (let i=n-1;i>=0;i--) for (let j=m-1;j>=0;j--) dp[i][j] = A[i]===B[j] ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j], dp[i][j+1]);
+      const res = []; let i=0,j=0;
+      while (i<n && j<m) { if (A[i]===B[j]) { res.push('  '+A[i]); i++; j++; } else if (dp[i+1][j] >= dp[i][j+1]) { res.push('- '+A[i]); i++; } else { res.push('+ '+B[j]); j++; } }
+      while (i<n) { res.push('- '+A[i]); i++; } while (j<m) { res.push('+ '+B[j]); j++; }
+      return res;
+    }
+    function compareDiff() {
+      const diff = computeDiff(document.getElementById('diff-a').value, document.getElementById('diff-b').value);
+      const o = document.getElementById('diff-output');
+      if (diff.every(l => l.startsWith('  '))) { o.innerHTML = `<div class="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">✅ لا يوجد أي فرق بين النصين</div>`; return; }
+      const html = diff.map(l => {
+        const esc = l.replace(/</g,'&lt;');
+        if (l.startsWith('+ ')) return `<span class="text-emerald-400">${esc}</span>`;
+        if (l.startsWith('- ')) return `<span class="text-rose-400">${esc}</span>`;
+        return `<span class="text-slate-300">${esc}</span>`;
+      }).join('\n');
+      o.innerHTML = `<pre class="code-out overflow-auto rounded-xl bg-slate-900 p-4 font-mono text-sm max-h-96">${html}</pre>`;
+    }
+
+    // --- Reference Cheatsheets ---
+    const GIT_REF = `<b>git init</b> — إنشاء مستودع جديد
+<b>git clone &lt;url&gt;</b> — نسخ مستودع
+<b>git status</b> — عرض حالة الملفات
+<b>git add .</b> — إضافة كل التعديلات
+<b>git commit -m "msg"</b> — حفظ التعديلات
+<b>git push</b> — رفع التعديلات
+<b>git pull</b> — سحب آخر تحديثات
+<b>git branch &lt;name&gt;</b> — إنشاء فرع جديد
+<b>git checkout -b &lt;branch&gt;</b> — إنشاء فرع والتبديل له
+<b>git merge &lt;branch&gt;</b> — دمج فرع
+<b>git log --oneline</b> — عرض تاريخ الـ commits
+<b>git stash</b> — تخزين التعديلات مؤقتاً`;
+    const REGEX_REF = `<b>.</b> — أي حرف واحد
+<b>\\d</b> — رقم (0-9)
+<b>\\w</b> — حرف/رقم/underscore
+<b>\\s</b> — مسافة بيضاء
+<b>*</b> — 0 أو أكثر
+<b>+</b> — 1 أو أكثر
+<b>?</b> — 0 أو 1
+<b>{n,m}</b> — من n إلى m مرة
+<b>^</b> — بداية النص
+<b>$</b> — نهاية النص
+<b>[abc]</b> — أي حرف من المجموعة
+<b>(a|b)</b> — a أو b
+<b>\\b</b> — حدود الكلمة`;
+    const HTTP_REF = `<b>GET</b> — جلب بيانات (بدون تعديل)
+<b>POST</b> — إنشاء مورد جديد
+<b>PUT</b> — تحديث/استبدال مورد كامل
+<b>PATCH</b> — تحديث جزئي لمورد
+<b>DELETE</b> — حذف مورد
+<b>HEAD</b> — مثل GET بدون Body
+<b>OPTIONS</b> — معرفة الطرق المتاحة`;
+    const LINUX_REF = `<b>ls -la</b> — عرض الملفات بالتفصيل
+<b>cd &lt;dir&gt;</b> — تغيير المجلد
+<b>mkdir &lt;dir&gt;</b> — إنشاء مجلد
+<b>rm -rf &lt;dir&gt;</b> — حذف مجلد بالكامل ⚠️
+<b>cp/mv &lt;src&gt; &lt;dst&gt;</b> — نسخ/نقل ملف
+<b>chmod +x &lt;file&gt;</b> — جعل الملف قابل للتنفيذ
+<b>grep -r "text" .</b> — بحث نصي في الملفات
+<b>ps aux</b> — عرض العمليات الجارية
+<b>kill -9 &lt;pid&gt;</b> — إيقاف عملية بالقوة
+<b>df -h</b> — مساحة القرص المتاحة
+<b>tail -f &lt;file&gt;</b> — متابعة ملف log مباشرة`;
+    function refBox(content) { return `<div class="rounded-xl bg-slate-900 p-5 font-mono text-sm text-slate-300 leading-8 code-out" style="white-space:pre-wrap;">${content}</div>`; }
+    TOOL_RENDERERS.gitref = () => `<h3 class="mb-3 text-lg font-bold">📘 Git Cheatsheet</h3>` + refBox(GIT_REF);
+    TOOL_RENDERERS.regexref = () => `<h3 class="mb-3 text-lg font-bold">🔍 Regex Cheatsheet</h3>` + refBox(REGEX_REF);
+    TOOL_RENDERERS.httpref = () => `<h3 class="mb-3 text-lg font-bold">🌐 HTTP Methods</h3>` + refBox(HTTP_REF);
+    TOOL_RENDERERS.linuxref = () => `<h3 class="mb-3 text-lg font-bold">🐧 Linux Commands</h3>` + refBox(LINUX_REF);
+
+
+    // ═══════════════════════════════════════════════
+    // LEARN TO CODE
+    // ═══════════════════════════════════════════════
+    const LEARN_TRACKS = [
+      { id: 'python', emoji: '🐍', name: 'بايثون' },
+      { id: 'javascript', emoji: '☕', name: 'جافاسكريبت' },
+      { id: 'webdev', emoji: '🌐', name: 'تطوير الويب' },
+      { id: 'sql', emoji: '🗄️', name: 'SQL وقواعد البيانات' },
+      { id: 'dsa', emoji: '🧠', name: 'هياكل البيانات والخوارزميات' },
+    ];
+    const LEARN_LEVELS = [
+      { id: 'beginner', emoji: '🌱', name: 'مبتدئ' },
+      { id: 'intermediate', emoji: '🌿', name: 'متوسط' },
+      { id: 'advanced', emoji: '🌳', name: 'متقدم' },
+    ];
+    let currentLearnTrack = null;
+
+    function renderLearn() {
+      return `
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-slate-900 sm:text-3xl">🎓 تعلم البرمجة</h1>
+          <p class="mt-1 text-sm text-slate-500 sm:text-base">من الصفر للاحتراف — اختر مساراً ثم مستواك</p>
+        </div>
+        <div id="learn-step-tracks" class="learn-step"></div>
+        <div id="learn-step-levels" class="learn-step hidden"></div>
+        <div id="learn-step-content" class="learn-step hidden"></div>
+      `;
+    }
+
+    function learnBackToTracks() {
+      document.getElementById('learn-step-tracks').classList.remove('hidden');
+      document.getElementById('learn-step-levels').classList.add('hidden');
+      document.getElementById('learn-step-content').classList.add('hidden');
+      document.getElementById('learn-step-tracks').innerHTML = `
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          ${LEARN_TRACKS.map(t => `
+            <button onclick="learnOpenTrack('${t.id}')" class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all">
+              <div class="text-4xl mb-2">${t.emoji}</div>
+              <div class="text-sm font-bold text-slate-700">${t.name}</div>
+            </button>
+          `).join('')}
+        </div>`;
+    }
+
+    function learnOpenTrack(trackId) {
+      currentLearnTrack = trackId;
+      const track = LEARN_TRACKS.find(t => t.id === trackId);
+      document.getElementById('learn-step-tracks').classList.add('hidden');
+      document.getElementById('learn-step-content').classList.add('hidden');
+      const el = document.getElementById('learn-step-levels');
+      el.classList.remove('hidden');
+      el.innerHTML = `
+        <button onclick="learnBackToTracks()" class="mb-4 text-sm text-teal-600 hover:underline">→ كل المسارات</button>
+        <h2 class="text-xl font-bold mb-4">${track.emoji} ${track.name}</h2>
+        <div class="grid gap-3 sm:grid-cols-3">
+          ${LEARN_LEVELS.map(l => `
+            <button onclick="learnShowContent('${l.id}')" class="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all">
+              <div class="text-2xl mb-1">${l.emoji}</div>
+              <div class="text-sm font-bold text-slate-700">${l.name}</div>
+            </button>
+          `).join('')}
+        </div>`;
+    }
+
+    function learnShowContent(levelId) {
+      const track = LEARN_TRACKS.find(t => t.id === currentLearnTrack);
+      const level = LEARN_LEVELS.find(l => l.id === levelId);
+      const content = LEARN_CONTENT[currentLearnTrack][levelId];
+      document.getElementById('learn-step-levels').classList.add('hidden');
+      const el = document.getElementById('learn-step-content');
+      el.classList.remove('hidden');
+      el.innerHTML = `
+        <button onclick="learnOpenTrack('${currentLearnTrack}')" class="mb-4 text-sm text-teal-600 hover:underline">→ كل المستويات</button>
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="text-lg font-bold text-teal-700 mb-4 text-center">${track.emoji} ${track.name} — ${level.emoji} ${level.name}</h2>
+          <div class="text-sm leading-8 text-slate-700 whitespace-pre-wrap">${content}</div>
+        </div>`;
+    }
+
+
+    // ═══════════════════════════════════════════════
+    // SNIPPETS
+    // ═══════════════════════════════════════════════
+    function renderSnippets() {
+      const SNIPPETS = [
+        { title: 'دالة Debounce', lang: 'JavaScript', code: 'function debounce(fn, delay) {\n  let timer;\n  return (...args) => {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), delay);\n  };\n}' },
+        { title: 'دالة Throttle', lang: 'JavaScript', code: 'function throttle(fn, limit) {\n  let inThrottle;\n  return (...args) => {\n    if (!inThrottle) {\n      fn(...args);\n      inThrottle = true;\n      setTimeout(() => inThrottle = false, limit);\n    }\n  };\n}' },
+        { title: 'جلب بيانات عبر fetch', lang: 'JavaScript', code: 'async function getData(url) {\n  const res = await fetch(url);\n  if (!res.ok) throw new Error("Network error");\n  return res.json();\n}' },
+        { title: 'تأخير التنفيذ (Sleep)', lang: 'JavaScript', code: 'const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));' },
+        { title: 'نسخ عميق لكائن', lang: 'JavaScript', code: 'const deepClone = (obj) => JSON.parse(JSON.stringify(obj));\n// أو للحالات المعقدة:\nconst deepClone2 = (obj) => structuredClone(obj);' },
+        { title: 'توسيط عنصر بـ Flexbox', lang: 'CSS', code: '.center {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}' },
+        { title: 'Grid متجاوب تلقائياً', lang: 'CSS', code: '.grid {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 1rem;\n}' },
+        { title: 'قراءة ملف بأمان', lang: 'Python', code: 'def read_file_safe(path):\n    try:\n        with open(path, "r", encoding="utf-8") as f:\n            return f.read()\n    except FileNotFoundError:\n        return None' },
+        { title: 'Context Manager للتوقيت', lang: 'Python', code: 'from contextlib import contextmanager\nimport time\n\n@contextmanager\ndef timer(label):\n    start = time.time()\n    yield\n    print(f"{label}: {time.time()-start:.3f}s")' },
+        { title: 'Decorator لإعادة المحاولة', lang: 'Python', code: 'def retry(times=3):\n    def decorator(fn):\n        def wrapper(*args, **kwargs):\n            for i in range(times):\n                try:\n                    return fn(*args, **kwargs)\n                except Exception as e:\n                    if i == times - 1:\n                        raise\n        return wrapper\n    return decorator' },
+        { title: 'Singleton Pattern', lang: 'Python', code: 'class Singleton:\n    _instance = None\n    def __new__(cls, *args, **kwargs):\n        if cls._instance is None:\n            cls._instance = super().__new__(cls)\n        return cls._instance' },
+        { title: 'حماية Route في Express', lang: 'Node.js', code: 'function requireAuth(req, res, next) {\n  if (!req.session.userId) {\n    return res.status(401).json({ error: "Unauthorized" });\n  }\n  next();\n}' },
+      ];
+      return `
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-slate-900 sm:text-3xl">مقتطفات برمجية</h1>
+          <p class="mt-1 text-sm text-slate-500 sm:text-base">مكتبة من المقتطفات الجاهزة لتسريع عملك</p>
+        </div>
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          ${SNIPPETS.map(s => `
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="mb-3 flex items-center justify-between">
+                <h3 class="text-base font-bold">${s.title}</h3>
+                <span class="rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700">${s.lang}</span>
+              </div>
+              ${outputWithCopy(s.code)}
+            </div>
+          `).join('')}
+        </div>`;
+    }
+
+    // ═══════════════════════════════════════════════
+    // COLORS
+    // ═══════════════════════════════════════════════
+    function renderColors() {
+      const PALETTES = [
+        { name: 'زمردي', colors: ['#0f766e','#14b8a6','#5eead4','#ccfbf1','#f0fdfa'] },
+        { name: 'عنبري', colors: ['#b45309','#f59e0b','#fcd34d','#fef3c7','#fffbeb'] },
+        { name: 'وردي', colors: ['#be123c','#f43f5e','#fda4af','#ffe4e6','#fff1f2'] },
+        { name: 'نيلي', colors: ['#4338ca','#6366f1','#a5b4fc','#e0e7ff','#eef2ff'] },
+        { name: 'محيطي', colors: ['#075985','#0ea5e9','#7dd3fc','#e0f2fe','#f0f9ff'] },
+        { name: 'غابي', colors: ['#166534','#22c55e','#86efac','#dcfce7','#f0fdf4'] },
+      ];
+      return `
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-slate-900 sm:text-3xl">لوحات الألوان</h1>
+          <p class="mt-1 text-sm text-slate-500 sm:text-base">لوحات منسّقة لإلهام تصاميمك (اضغط على اللون لنسخه) + محول HEX↔RGB في تبويب الأدوات</p>
+        </div>
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          ${PALETTES.map(p => `
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div class="flex h-24">
+                ${p.colors.map(c => `<button onclick="copyToClipboard('${c}')" class="flex-1 transition-transform hover:scale-105" style="background-color:${c}" title="نسخ ${c}"></button>`).join('')}
+              </div>
+              <div class="p-4">
+                <span class="text-lg font-bold text-slate-800">${p.name}</span>
+                <div class="mt-1 flex flex-wrap gap-x-2 code-out">
+                  ${p.colors.map(c => `<span class="font-mono text-[11px] text-slate-400">${c}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>`;
+    }
+
+    // ═══════════════════════════════════════════════
+    // RESOURCES
+    // ═══════════════════════════════════════════════
+    function renderResources() {
+      const RESOURCES = [
+        { title: 'MDN Web Docs', url: 'https://developer.mozilla.org', desc: 'المرجع الأول لمطوري الويب' },
+        { title: 'React Documentation', url: 'https://react.dev', desc: 'التوثيق الرسمي لمكتبة React' },
+        { title: 'Tailwind CSS', url: 'https://tailwindcss.com', desc: 'إطار عمل CSS قائم على الأدوات' },
+        { title: 'Python Docs', url: 'https://docs.python.org/3/', desc: 'التوثيق الرسمي للغة بايثون' },
+        { title: 'freeCodeCamp', url: 'https://www.freecodecamp.org', desc: 'دورات برمجة مجانية كاملة' },
+        { title: 'LeetCode', url: 'https://leetcode.com', desc: 'تدريب على هياكل البيانات والخوارزميات' },
+        { title: 'DevDocs', url: 'https://devdocs.io', desc: 'كل توثيقات لغات البرمجة في مكان واحد' },
+        { title: 'Can I Use', url: 'https://caniuse.com', desc: 'دعم المتصفحات لميزات الويب' },
+        { title: 'GitHub', url: 'https://github.com', desc: 'استضافة المشاريع والتحكم بالإصدارات' },
+      ];
+      return `
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-slate-900 sm:text-3xl">مصادر تعلّم</h1>
+          <p class="mt-1 text-sm text-slate-500 sm:text-base">روابط لأهم المراجع والأدوات التي يحتاجها كل مطور</p>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          ${RESOURCES.map(r => `
+            <a href="${r.url}" target="_blank" rel="noopener noreferrer" class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
+              <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-xl">🔗</div>
+              <h3 class="text-lg font-bold text-slate-800">${r.title}</h3>
+              <p class="mt-1 text-sm text-slate-500">${r.desc}</p>
+            </a>
+          `).join('')}
+        </div>`;
+    }
+
+    init();
+
+  </script>
+</body>
+</html>
